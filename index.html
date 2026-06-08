@@ -907,6 +907,9 @@
     .btn-ghost:hover { background: var(--gray-100); }
     .btn-danger { background: #fff; color: var(--jd-red); border: 1px solid var(--jd-red); }
     .btn-danger:hover { background: var(--jd-light-red); }
+
+    /* 赠金标签 */
+    .tag-bonus { background: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -1174,10 +1177,13 @@
       <span class="position-weight" id="pos-weight">0.0000</span>
       <span class="position-unit">克 (g)</span>
     </div>
-    <div style="font-size:12px; color:#7B5E0A; margin-top:4px;">
-      加权均价：<strong id="pos-avg-price">-- 元/克</strong>
-    </div>
+  <div style="font-size:12px; color:#7B5E0A; margin-top:4px;">
+    加权均价：<strong id="pos-avg-price">-- 元/克</strong>
   </div>
+  <div id="pos-bonus-info" style="font-size:12px; color:#7B5E0A; margin-top:4px; display:none;">
+    赠金：<strong id="pos-bonus-weight">0.0000 g</strong>
+  </div>
+</div>
 
   <!-- 持仓统计 -->
   <div class="stats-grid">
@@ -1435,12 +1441,13 @@ function calcBuyAmount() {
   const price = parseFloat(document.getElementById('buy-price').value) || 0;
   const weight = parseFloat(document.getElementById('buy-weight').value) || 0;
   const amount = price * weight;
-  const fee = calcFee(amount, settings.buyFeeRate);
+  // 买入价格为0时，手续费强制为0（如红包/赠送）
+  const fee = price === 0 ? 0 : calcFee(amount, settings.buyFeeRate);
   const total = amount + fee;
 
-  document.getElementById('buy-amount').value = amount > 0 ? amount.toFixed(2) : '';
-  document.getElementById('buy-fee').value = amount > 0 ? fee.toFixed(2) : '';
-  document.getElementById('buy-total').value = amount > 0 ? total.toFixed(2) : '';
+  document.getElementById('buy-amount').value = weight > 0 ? amount.toFixed(2) : '';
+  document.getElementById('buy-fee').value = weight > 0 ? fee.toFixed(2) : '';
+  document.getElementById('buy-total').value = weight > 0 ? total.toFixed(2) : '';
 }
 
 function submitBuy(event) {
@@ -1451,13 +1458,21 @@ function submitBuy(event) {
   const date = document.getElementById('buy-date').value;
   const remark = document.getElementById('buy-remark').value.trim();
 
-  if (!price || price <= 0) { showToast('请输入有效的买入价格', 'error'); return; }
+  if (isNaN(price) || price < 0) { showToast('请输入有效的买入价格（可以为0）', 'error'); return; }
+  if (price === 0 && !remark) { showToast('买入价格为0时请填写备注（如：红包/赠送）', 'error'); return; }
+
+  // 自动添加赠金标签
+  let finalRemark = remark;
+  if (price === 0 && !remark.includes('[赠金]')) {
+    finalRemark = '[赠金] ' + remark;
+  }
   if (!weight || weight <= 0) { showToast('请输入有效的买入重量', 'error'); return; }
   if (weight < 0.001) { showToast('买入重量不能小于 0.001g', 'error'); return; }
   if (!date) { showToast('请选择买入日期', 'error'); return; }
 
   const amount = price * weight;
-  const fee = calcFee(amount, settings.buyFeeRate);
+  // 买入价格为0时，手续费强制为0（如红包/赠送）
+  const fee = price === 0 ? 0 : calcFee(amount, settings.buyFeeRate);
 
   /** @type {GoldRecord} */
   const record = {
@@ -1468,7 +1483,7 @@ function submitBuy(event) {
     weight: parseFloat(weight.toFixed(4)),
     amount: parseFloat(amount.toFixed(2)),
     fee: parseFloat(fee.toFixed(2)),
-    remark,
+    remark: finalRemark,
   };
 
   // 编辑模式：更新现有记录
@@ -1685,6 +1700,7 @@ function renderRecords() {
     return `
       <div class="record-item">
         <span class="record-badge ${badgeClass}">${typeLabel}</span>
+        ${isBuy && (r.price === 0 || (r.remark && r.remark.includes('[赠金]'))) ? '<span class="tag tag-bonus" style="margin-left:4px;">🎁 赠金</span>' : ''}
         <div class="record-body">
           <div class="record-main">
             <span class="record-amount">¥${r.amount.toFixed(2)}</span>
@@ -2227,12 +2243,17 @@ function computePosition() {
   let totalSellWeight = 0;
   let totalSellAmount = 0;
   let totalSellFee = 0;
+  let totalBonusWeight = 0;  // 赠金总重量（买入价格为0）
 
   records.forEach(r => {
     if (r.type === 'buy') {
       totalBuyWeight += r.weight;
       totalBuyAmount += r.amount;
       totalBuyFee += r.fee;
+      // 计算赠金重量（买入价格为0）
+      if (r.price === 0) {
+        totalBonusWeight += r.weight;
+      }
     } else if (r.type === 'sell') {
       totalSellWeight += r.weight;
       totalSellAmount += r.amount;
@@ -2245,6 +2266,7 @@ function computePosition() {
   // 计算剩余持仓的均价（只考虑还没卖出的部分）
   let remainingCost = 0;    // 剩余持仓的总成本（含手续费）
   let remainingWeight = 0;  // 剩余持仓的总克重
+  let bonusRemainingWeight = 0;  // 剩余赠金重量
 
   records.filter(r => r.type === 'buy').forEach(buy => {
     const remaining = getBuyRemainingWeight(buy.id);
@@ -2253,6 +2275,10 @@ function computePosition() {
       const costPerGram = (buy.amount + buy.fee) / buy.weight;
       remainingCost += remaining * costPerGram;
       remainingWeight += remaining;
+      // 计算剩余赠金重量
+      if (buy.price === 0) {
+        bonusRemainingWeight += remaining;
+      }
     }
   });
 
@@ -2270,6 +2296,8 @@ function computePosition() {
     buyFeeTotal: totalBuyFee,
     sellFeeTotal: totalSellFee,
     totalCostWithFee: totalBuyAmount + totalBuyFee,
+    bonusWeight: totalBonusWeight,  // 赠金总重量（含已卖出）
+    bonusRemainingWeight,  // 剩余赠金重量
   };
 }
 
@@ -2285,6 +2313,13 @@ function renderPosition() {
   safeSetText('pos-buy-amount-sub', `¥${pos.totalBuyAmount.toFixed(2)}`);
   safeSetText('pos-sell-weight', `${pos.totalSellWeight.toFixed(4)} g`);
   safeSetText('pos-sell-amount-sub', `¥${pos.totalSellAmount.toFixed(2)}`);
+
+  // 显示赠金数量
+  safeSetText('pos-bonus-weight', `${pos.bonusRemainingWeight.toFixed(4)} g`);
+  const bonusEl = document.getElementById('pos-bonus-info');
+  if (bonusEl) {
+    bonusEl.style.display = pos.bonusRemainingWeight > 0.0001 ? 'block' : 'none';
+  }
 
   // Reset pnl section
   const pnlSection = document.getElementById('floating-pnl-section');
