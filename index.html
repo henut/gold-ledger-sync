@@ -1467,7 +1467,7 @@ function submitBuy(event) {
     finalRemark = '[赠金] ' + remark;
   }
   if (!weight || weight <= 0) { showToast('请输入有效的买入重量', 'error'); return; }
-  if (weight < 0.001) { showToast('买入重量不能小于 0.001g', 'error'); return; }
+  if (weight < 0.0001) { showToast('买入重量不能小于 0.0001g', 'error'); return; }
   if (!date) { showToast('请选择买入日期', 'error'); return; }
 
   const amount = price * weight;
@@ -1547,6 +1547,7 @@ function submitSell(event) {
 
   if (!price || price <= 0) { showToast('请输入有效的卖出价格', 'error'); return; }
   if (!weight || weight <= 0) { showToast('请输入有效的卖出重量', 'error'); return; }
+  if (weight < 0.0001) { showToast('卖出重量不能小于 0.0001g', 'error'); return; }
   if (!date) { showToast('请选择卖出日期', 'error'); return; }
 
   // Validate against current position
