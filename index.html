@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#E4393C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>京东 × 浙商银行积存金记账</title>
+  <style>
+    /* ===== CSS Reset & Variables ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --jd-red: #E4393C;
+      --jd-dark-red: #C1272D;
+      --jd-light-red: #fff0f0;
+      --gold: #D4A017;
+      --gold-light: #FFF8E1;
+      --buy-bg: #E8F5E9;
+      --buy-text: #2E7D32;
+      --sell-bg: #FFF3E0;
+      --sell-text: #E65100;
+      --profit-pos: #E4393C;
+      --profit-neg: #2E7D32;
+      --gray-50: #FAFAFA;
+      --gray-100: #F5F5F5;
+      --gray-200: #EEEEEE;
+      --gray-300: #E0E0E0;
+      --gray-500: #9E9E9E;
+      --gray-600: #757575;
+      --gray-700: #616161;
+      --gray-800: #424242;
+      --gray-900: #212121;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+                   'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      background: linear-gradient(135deg, var(--jd-red) 0%, var(--jd-dark-red) 100%);
+      color: #fff;
+      padding: 20px 16px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(228,57,60,0.35);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-title .gold-icon {
+      font-size: 22px;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-header {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-header:hover { background: rgba(255,255,255,0.3); }
+
+    /* ===== Tabs ===== */
+    .tabs-wrapper {
+      background: #fff;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 88px;
+      z-index: 99;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabs-wrapper::-webkit-scrollbar { display: none; }
+
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--gray-200);
+      min-width: max-content;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-600);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover { color: var(--jd-red); }
+
+    .tab-btn.active {
+      color: var(--jd-red);
+      border-bottom-color: var(--jd-red);
+      font-weight: 600;
+    }
+
+    /* ===== Tab Content ===== */
+    .tab-content { display: none; padding: 16px; max-width: 800px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    /* ===== Cards ===== */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .card-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .card-icon.buy { background: var(--buy-bg); }
+    .card-icon.sell { background: var(--sell-bg); }
+    .card-icon.info { background: var(--gold-light); }
+    .card-icon.settings { background: #E3F2FD; }
+
+    /* ===== Forms ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-600);
+    }
+
+    label .required { color: var(--jd-red); margin-left: 2px; }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="search"],
+    select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--gray-900);
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--jd-red);
+      box-shadow: 0 0 0 3px rgba(228,57,60,0.1);
+    }
+
+    input[readonly] {
+      background: var(--gray-50);
+      color: var(--gray-700);
+      cursor: default;
+    }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+
+    .input-hint.highlight {
+      color: var(--jd-red);
+      font-weight: 500;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 40px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--jd-red), var(--jd-dark-red));
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(228,57,60,0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--jd-dark-red), #a01e22);
+      box-shadow: 0 4px 12px rgba(228,57,60,0.4);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
+    }
+    .btn-secondary:hover { background: var(--gray-200); }
+
+    .btn-danger {
+      background: #fff;
+      color: var(--jd-red);
+      border: 1px solid var(--jd-red);
+      padding: 5px 10px;
+      font-size: 12px;
+      min-height: 30px;
+    }
+    .btn-danger:hover { background: var(--jd-light-red); }
+
+    .btn-full { width: 100%; }
+
+    /* ===== Stats Grid ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      border-left: 4px solid transparent;
+    }
+
+    .stat-card.red { border-left-color: var(--jd-red); }
+    .stat-card.green { border-left-color: var(--buy-text); }
+    .stat-card.orange { border-left-color: var(--sell-text); }
+    .stat-card.gold { border-left-color: var(--gold); }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .stat-value.red { color: var(--jd-red); }
+    .stat-value.green { color: var(--buy-text); }
+    .stat-value.profit-pos { color: var(--profit-pos); }
+    .stat-value.profit-neg { color: var(--profit-neg); }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+
+    /* ===== Transaction Records ===== */
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .search-bar input { flex: 1; }
+
+    .records-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .record-item {
+      background: #fff;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border: 1px solid var(--gray-200);
+      transition: box-shadow 0.2s;
+    }
+    .record-item:hover { box-shadow: var(--shadow-md); }
+
+    .record-badge {
+      flex-shrink: 0;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .record-badge.buy { background: var(--buy-bg); color: var(--buy-text); }
+    .record-badge.sell { background: var(--sell-bg); color: var(--sell-text); }
+
+    .record-body { flex: 1; min-width: 0; }
+
+    .record-main {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .record-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .record-weight {
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .record-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 5px;
+    }
+
+    .record-meta-item {
+      font-size: 11px;
+      color: var(--gray-500);
+      background: var(--gray-100);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .record-note {
+      margin-top: 5px;
+      font-size: 12px;
+      color: var(--gray-600);
+      font-style: italic;
+    }
+
+    .record-actions { flex-shrink: 0; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-500);
+    }
+
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ===== Position Analysis ===== */
+    .position-highlight {
+      background: linear-gradient(135deg, #fff8e1, #fff3cd);
+      border: 1px solid #ffe082;
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .position-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .position-weight {
+      font-size: 32px;
+      font-weight: 800;
+      color: #7B5E0A;
+    }
+
+    .position-unit {
+      font-size: 14px;
+      color: #A0760E;
+      font-weight: 500;
+    }
+
+    .pnl-section {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--gray-50);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+    }
+
+    .pnl-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 10px;
+    }
+
+    .pnl-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .pnl-row:last-child { border-bottom: none; }
+
+    .pnl-key { font-size: 12px; color: var(--gray-600); }
+    .pnl-val { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .pnl-val.profit-pos { color: var(--profit-pos); }
+    .pnl-val.profit-neg { color: var(--profit-neg); }
+
+    /* ===== Settings ===== */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-label { font-size: 13px; color: var(--gray-700); }
+    .settings-input {
+      width: 100px;
+      padding: 7px 10px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      text-align: right;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .settings-input:focus { border-color: var(--jd-red); }
+
+    /* ===== Toast ===== */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(33, 33, 33, 0.9);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      max-width: 300px;
+      text-align: center;
+      animation: toastIn 0.3s ease;
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.success { background: rgba(46, 125, 50, 0.92); }
+    .toast.error   { background: rgba(211, 47, 47, 0.92); }
+    .toast.info    { background: rgba(25, 118, 210, 0.92); }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-10px); }
+    }
+
+    /* ===== Divider ===== */
+    .section-divider {
+      height: 1px;
+      background: var(--gray-200);
+      margin: 16px 0;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 600px) {
+      .header-title { font-size: 16px; }
+      .btn-header { padding: 5px 10px; font-size: 11px; }
+      .tabs-wrapper { top: 76px; }
+      .tab-btn { min-width: 64px; padding: 10px 10px; font-size: 12px; }
+      .tab-content { padding: 12px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .record-item { flex-wrap: wrap; }
+      .card { padding: 14px; }
+      .position-weight { font-size: 26px; }
+    }
+
+    @media (max-width: 400px) {
+      .header-actions { flex-direction: column; gap: 4px; }
+    }
+
+    /* ===== Hidden file input ===== */
+    #import-input { display: none; }
+
+    /* ===== Loading ===== */
+    .loading-mask {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.7);
+      z-index: 9998;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--jd-red);
+    }
+    .loading-mask.show { display: flex; }
+
+    /* ===== Sync Modal ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--gray-500);
+      padding: 4px;
+      line-height: 1;
+    }
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      padding: 12px 20px 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      border-top: 1px solid var(--gray-200);
+    }
+    .sync-status {
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .sync-status.idle {
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+    .sync-status.syncing {
+      background: #E3F2FD;
+      color: #1565C0;
+    }
+    .sync-status.done {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .sync-status.error {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    .sync-hint {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+<!-- Loading -->
+<div class="loading-mask" id="loading-mask">⏳ 处理中...</div>
+<!-- Hidden file input for import -->
+<input type="file" id="import-input" accept=".json" />
+
+<!-- ===== Header ===== -->
+<header class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">
+        <span class="gold-icon">🥇</span>
+        京东 × 浙商银行积存金记账
+      </div>
+      <div class="header-subtitle" id="header-subtitle">买入费率 0% · 卖出费率 0.4%</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header" onclick="exportData()">📤 导出</button>
+      <button class="btn-header" onclick="document.getElementById('import-input').click()">📥 导入</button>
+      <button class="btn-header" onclick="var c=document.getElementById('settings-card-buy');c.style.display=c.style.display==='none'?'block':'none';">⚙️ 费率</button>
+      <button class="btn-header" id="btn-sync" onclick="openSyncModal()">☁️ 同步</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Sync Modal ===== -->
+<div class="modal-overlay" id="sync-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">☁️ 云同步设置</span>
+      <button class="modal-close" onclick="closeSyncModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="sync-status idle" id="sync-status">
+        配置 GitHub Token 后可实现多端云同步（手机 ↔ 电脑）
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label for="github-token-input">GitHub Token <span class="required">*</span></label>
+        <input type="password" id="github-token-input" placeholder="ghp_xxxxxxxxxxxxxxxx"
+               style="margin-top:5px;" autocomplete="off" />
+        <div class="sync-hint">
+          Token 需要 <b>gist</b> 权限。在 GitHub → Settings → Developer settings → Personal access tokens (classic) 中生成。
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label for="gist-id-input">Gist ID（留空则自动创建）</label>
+        <input type="text" id="gist-id-input" placeholder="自动生成，首次同步后显示"
+               style="margin-top:5px;" readonly />
+        <div class="sync-hint">
+          首次同步将自动创建私密 Gist 并保存 ID。多端使用同一 Gist ID 即可同步数据。
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="syncPush()">☁️ 上传到云端</button>
+        <button class="btn btn-secondary" onclick="syncPull()">⬇️ 从云端拉取</button>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-secondary" style="width:100%;font-size:12px;" onclick="clearSyncConfig()">清除同步配置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tabs ===== -->
+<div class="tabs-wrapper">
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" onclick="switchTab('buy', this)">💚 买入</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('sell', this)">🟠 卖出</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('records', this)">📋 记录</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('position', this)">📊 持仓</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('pnl', this)">💹 盈亏</button>
+  </div>
+</div>
+
+<!-- ===== Tab: 买入 ===== -->
+<div class="tab-content active" id="tab-buy">
+
+  <!-- 费率设置 -->
+  <div class="card" id="settings-card-buy" style="display:none;">
+    <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('settings-card-buy').style.display='none';">
+      <div class="card-icon settings">⚙️</div>
+      <span class="card-title">费率设置</span>
+      <span style="margin-left:auto; font-size:12px; color:var(--gray-500);">点击折叠</span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">买入费率（%）</span>
+      <input type="number" class="settings-input" id="buy-fee-rate-input"
+             step="0.01" min="0" max="100" value="0"
+             onchange="saveSettings()" />
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">卖出费率（%）</span>
+      <input type="number" class="settings-input" id="sell-fee-rate-input"
+             step="0.01" min="0" max="100" value="0.4"
+             onchange="saveSettings()" />
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">最低手续费（元）</span>
+      <input type="number" class="settings-input" id="min-fee-input"
+             step="0.01" min="0" value="0"
+             onchange="saveSettings()" />
+    </div>
+  </div>
+
+  <!-- 买入表单 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon buy">💚</div>
+      <span class="card-title">新增买入记录</span>
+    </div>
+    <form onsubmit="submitBuy(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="buy-price">买入价格（元/克）<span class="required">*</span></label>
+          <input type="number" id="buy-price" step="0.01" min="0" placeholder="例：485.50"
+                 oninput="calcBuyAmount()" required />
+        </div>
+        <div class="form-group">
+          <label for="buy-weight">买入重量（克）<span class="required">*</span></label>
+          <input type="number" id="buy-weight" step="0.0001" min="0.0001" placeholder="例：5.0000"
+                 oninput="calcBuyAmount()" required />
+          <span class="input-hint">最小 0.01g</span>
+        </div>
+        <div class="form-group">
+          <label for="buy-amount">买入金额（元）</label>
+          <input type="number" id="buy-amount" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="buy-fee">手续费（元）</label>
+          <input type="number" id="buy-fee" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="buy-total">实际支出（元）</label>
+          <input type="number" id="buy-total" readonly placeholder="金额 + 手续费" />
+        </div>
+        <div class="form-group">
+          <label for="buy-date">买入日期<span class="required">*</span></label>
+          <input type="date" id="buy-date" required />
+        </div>
+        <div class="form-group full">
+          <label for="buy-remark">备注</label>
+          <input type="text" id="buy-remark" placeholder="选填，如：定投第1期" maxlength="100" />
+        </div>
+      </div>
+      <div class="section-divider"></div>
+      <button type="submit" class="btn btn-primary btn-full">✅ 保存买入记录</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Tab: 卖出 ===== -->
+<div class="tab-content" id="tab-sell">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon sell">🟠</div>
+      <span class="card-title">新增卖出记录</span>
+    </div>
+    <div class="input-hint highlight" id="sell-available-hint" style="margin-bottom:12px; padding: 8px 12px; background: var(--sell-bg); border-radius: var(--radius-sm); font-size:12px;">
+      📦 当前可用持仓：计算中...
+    </div>
+    <form onsubmit="submitSell(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="sell-price">卖出价格（元/克）<span class="required">*</span></label>
+          <input type="number" id="sell-price" step="0.01" min="0" placeholder="例：490.00"
+                 oninput="calcSellAmount()" required />
+        </div>
+        <div class="form-group">
+          <label for="sell-weight">卖出重量（克）<span class="required">*</span></label>
+          <input type="number" id="sell-weight" step="0.0001" min="0.0001" placeholder="例：2.0000"
+                 oninput="calcSellAmount()" required />
+        </div>
+        <div class="form-group">
+          <label for="sell-amount">卖出金额（元）</label>
+          <input type="number" id="sell-amount" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="sell-fee">手续费（元）</label>
+          <input type="number" id="sell-fee" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="sell-net">实际到账（元）</label>
+          <input type="number" id="sell-net" readonly placeholder="金额 - 手续费" />
+        </div>
+        <div class="form-group">
+          <label for="sell-date">卖出日期<span class="required">*</span></label>
+          <input type="date" id="sell-date" required />
+        </div>
+        <div class="form-group full">
+          <label for="sell-remark">备注</label>
+          <input type="text" id="sell-remark" placeholder="选填，如：止盈" maxlength="100" />
+        </div>
+      </div>
+      <div class="section-divider"></div>
+      <button type="submit" class="btn btn-primary btn-full">✅ 保存卖出记录</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Tab: 交易记录 ===== -->
+<div class="tab-content" id="tab-records">
+  <div class="card" style="padding: 14px;">
+    <div class="search-bar">
+      <input type="search" id="search-input" placeholder="🔍 搜索备注关键字..."
+             oninput="renderRecords()" />
+      <button class="btn btn-secondary" onclick="document.getElementById('search-input').value=''; renderRecords()">重置</button>
+    </div>
+    <div style="font-size:12px; color:var(--gray-500); margin-bottom:8px;" id="records-count">共 0 条记录</div>
+  </div>
+  <div class="records-list" id="records-list">
+    <!-- Records rendered by JS -->
+  </div>
+</div>
+
+<!-- ===== Tab: 持仓分析 ===== -->
+<div class="tab-content" id="tab-position">
+  <!-- 持仓概览 -->
+  <div class="position-highlight">
+    <div style="font-size:12px; color:#A0760E; margin-bottom:6px; font-weight:500;">📦 当前持仓（积存黄金）</div>
+    <div class="position-main">
+      <span class="position-weight" id="pos-weight">0.0000</span>
+      <span class="position-unit">克 (g)</span>
+    </div>
+    <div style="font-size:12px; color:#7B5E0A; margin-top:4px;">
+      加权均价：<strong id="pos-avg-price">-- 元/克</strong>
+    </div>
+  </div>
+
+  <!-- 持仓统计 -->
+  <div class="stats-grid">
+    <div class="stat-card red">
+      <div class="stat-label">总投入（含手续费）</div>
+      <div class="stat-value" id="pos-total-cost">¥0.00</div>
+      <div class="stat-sub" id="pos-total-cost-sub"></div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">加权均价</div>
+      <div class="stat-value" id="pos-avg-price-card">--</div>
+      <div class="stat-sub">元/克</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">已买入合计</div>
+      <div class="stat-value green" id="pos-buy-weight">0.0000 g</div>
+      <div class="stat-sub" id="pos-buy-amount-sub">¥0.00</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">已卖出合计</div>
+      <div class="stat-value" style="color:var(--sell-text)" id="pos-sell-weight">0.0000 g</div>
+      <div class="stat-sub" id="pos-sell-amount-sub">¥0.00</div>
+    </div>
+  </div>
+
+  <!-- 浮盈浮亏计算 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon info">💹</div>
+      <span class="card-title">浮盈浮亏计算</span>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label for="current-price-input">当前金价（元/克）</label>
+      <input type="number" id="current-price-input" step="0.01" min="0"
+             placeholder="输入当前金价查看浮盈浮亏"
+             oninput="calcFloatingPnl()" />
+    </div>
+    <div class="pnl-section" id="floating-pnl-section" style="display:none;">
+      <div class="pnl-title">浮盈浮亏明细</div>
+      <div class="pnl-row">
+        <span class="pnl-key">当前金价</span>
+        <span class="pnl-val" id="fpnl-current-price">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">持仓均价</span>
+        <span class="pnl-val" id="fpnl-avg-price">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">持仓克重</span>
+        <span class="pnl-val" id="fpnl-weight">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">持仓市值</span>
+        <span class="pnl-val" id="fpnl-market-value">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">浮盈金额</span>
+        <span class="pnl-val" id="fpnl-amount">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">浮盈比例</span>
+        <span class="pnl-val" id="fpnl-ratio">--</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab: 盈亏统计 ===== -->
+<div class="tab-content" id="tab-pnl">
+  <!-- 4 统计卡片 -->
+  <div class="stats-grid">
+    <div class="stat-card red">
+      <div class="stat-label">已实现盈亏</div>
+      <div class="stat-value" id="realized-pnl">¥0.00</div>
+      <div class="stat-sub">基于均价法计算</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">总手续费支出</div>
+      <div class="stat-value" id="total-fee">¥0.00</div>
+      <div class="stat-sub">买入 + 卖出</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">总买入金额</div>
+      <div class="stat-value green" id="total-buy-amount">¥0.00</div>
+      <div class="stat-sub" id="total-buy-weight-sub">0.0000 g</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">总卖出金额</div>
+      <div class="stat-value" style="color:var(--sell-text)" id="total-sell-amount">¥0.00</div>
+      <div class="stat-sub" id="total-sell-weight-sub">0.0000 g</div>
+    </div>
+  </div>
+
+  <!-- 盈亏详情 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon info">📊</div>
+      <span class="card-title">盈亏明细</span>
+    </div>
+    <div class="pnl-section">
+      <div class="pnl-row">
+        <span class="pnl-key">总买入金额（含手续费）</span>
+        <span class="pnl-val" id="detail-total-buy-with-fee">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">总卖出金额（扣手续费）</span>
+        <span class="pnl-val" id="detail-total-sell-net">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">买入手续费合计</span>
+        <span class="pnl-val" id="detail-buy-fee">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">卖出手续费合计</span>
+        <span class="pnl-val" id="detail-sell-fee">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">已实现盈亏（均价法）</span>
+        <span class="pnl-val" id="detail-realized-pnl">¥0.00</span>
+      </div>
+    </div>
+    <div style="margin-top: 12px; padding: 10px; background: var(--gray-50); border-radius: var(--radius-sm); font-size: 11px; color: var(--gray-500); line-height: 1.7;">
+      💡 <b>已实现盈亏计算说明：</b><br/>
+      已实现盈亏 = 卖出净收入 - (卖出克重 × 买入均价) - 卖出部分对应的买入手续费<br/>
+      其中：买入均价 = 总买入金额 ÷ 总买入克重（含手续费的综合成本）
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   京东 × 浙商银行积存金记账 — 完整业务逻辑
+   ============================================================ */
+
+// -------------------- 数据存储 --------------------
+const STORAGE_KEY = 'gold_ledger_records';
+const SETTINGS_KEY = 'gold_ledger_settings';
+
+/** @typedef {{ id: string, type: 'buy'|'sell', date: string, price: number, weight: number, amount: number, fee: number, remark: string }} GoldRecord */
+
+/** @type {GoldRecord[]} */
+let records = [];
+
+/** @type {{ buyFeeRate: number, sellFeeRate: number, minFee: number }} */
+let settings = {
+  buyFeeRate: 0,
+  sellFeeRate: 0.4,
+  minFee: 0,
+};
+
+/** Load data from localStorage */
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    records = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(records)) records = [];
+  } catch (e) {
+    console.error('Load records error:', e);
+    records = [];
+  }
+
+  try {
+    const rawSettings = localStorage.getItem(SETTINGS_KEY);
+    if (rawSettings) {
+      const parsed = JSON.parse(rawSettings);
+      settings = { ...settings, ...parsed };
+    }
+  } catch (e) {
+    console.error('Load settings error:', e);
+  }
+
+  // Sync settings UI
+  const buyRateEl = document.getElementById('buy-fee-rate-input');
+  const sellRateEl = document.getElementById('sell-fee-rate-input');
+  const minFeeEl = document.getElementById('min-fee-input');
+  if (buyRateEl) buyRateEl.value = settings.buyFeeRate;
+  if (sellRateEl) sellRateEl.value = settings.sellFeeRate;
+  if (minFeeEl) minFeeEl.value = settings.minFee;
+
+  updateHeaderSubtitle();
+}
+
+/** Save records to localStorage */
+function saveRecords() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+
+/** Save settings to localStorage */
+function saveSettings() {
+  const buyRateEl = document.getElementById('buy-fee-rate-input');
+  const sellRateEl = document.getElementById('sell-fee-rate-input');
+  const minFeeEl = document.getElementById('min-fee-input');
+
+  settings.buyFeeRate = parseFloat(buyRateEl.value) || 0;
+  settings.sellFeeRate = parseFloat(sellRateEl.value) || 0;
+  settings.minFee = parseFloat(minFeeEl.value) || 0;
+
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  updateHeaderSubtitle();
+  showToast('费率设置已保存', 'success');
+
+  // Re-calculate currently open forms
+  calcBuyAmount();
+  calcSellAmount();
+}
+
+/** Generate a unique ID */
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// -------------------- Fee Calculation --------------------
+/**
+ * Calculate fee based on amount.
+ * @param {number} amount
+ * @param {number} ratePercent
+ * @returns {number}
+ */
+function calcFee(amount, ratePercent) {
+  const fee = amount * (ratePercent / 100);
+  return Math.max(fee, settings.minFee);
+}
+
+// -------------------- Header --------------------
+function updateHeaderSubtitle() {
+  const el = document.getElementById('header-subtitle');
+  if (el) {
+    el.textContent = `买入费率 ${settings.buyFeeRate}% · 卖出费率 ${settings.sellFeeRate}% · 最低手续费 ${settings.minFee}元`;
+  }
+}
+
+// -------------------- Tab Switching --------------------
+/**
+ * @param {string} tabId
+ * @param {HTMLElement} btn
+ */
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+  const content = document.getElementById('tab-' + tabId);
+  if (content) content.classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  // Refresh data for the active tab
+  if (tabId === 'records') renderRecords();
+  if (tabId === 'position') renderPosition();
+  if (tabId === 'pnl') renderPnl();
+  if (tabId === 'sell') updateSellHint();
+}
+
+// -------------------- Buy Form --------------------
+function calcBuyAmount() {
+  const price = parseFloat(document.getElementById('buy-price').value) || 0;
+  const weight = parseFloat(document.getElementById('buy-weight').value) || 0;
+  const amount = price * weight;
+  const fee = calcFee(amount, settings.buyFeeRate);
+  const total = amount + fee;
+
+  document.getElementById('buy-amount').value = amount > 0 ? amount.toFixed(2) : '';
+  document.getElementById('buy-fee').value = amount > 0 ? fee.toFixed(2) : '';
+  document.getElementById('buy-total').value = amount > 0 ? total.toFixed(2) : '';
+}
+
+function submitBuy(event) {
+  event.preventDefault();
+
+  const price = parseFloat(document.getElementById('buy-price').value);
+  const weight = parseFloat(document.getElementById('buy-weight').value);
+  const date = document.getElementById('buy-date').value;
+  const remark = document.getElementById('buy-remark').value.trim();
+
+  if (!price || price <= 0) { showToast('请输入有效的买入价格', 'error'); return; }
+  if (!weight || weight <= 0) { showToast('请输入有效的买入重量', 'error'); return; }
+  if (weight < 0.001) { showToast('买入重量不能小于 0.001g', 'error'); return; }
+  if (!date) { showToast('请选择买入日期', 'error'); return; }
+
+  const amount = price * weight;
+  const fee = calcFee(amount, settings.buyFeeRate);
+
+  /** @type {GoldRecord} */
+  const record = {
+    id: genId(),
+    type: 'buy',
+    date,
+    price: parseFloat(price.toFixed(2)),
+    weight: parseFloat(weight.toFixed(4)),
+    amount: parseFloat(amount.toFixed(2)),
+    fee: parseFloat(fee.toFixed(2)),
+    remark,
+  };
+
+  records.push(record);
+  saveRecords();
+
+  showToast(`✅ 买入记录已保存：${weight.toFixed(4)}g × ¥${price.toFixed(2)}/g`, 'success');
+  resetBuyForm();
+}
+
+function resetBuyForm() {
+  document.getElementById('buy-price').value = '';
+  document.getElementById('buy-weight').value = '';
+  document.getElementById('buy-amount').value = '';
+  document.getElementById('buy-fee').value = '';
+  document.getElementById('buy-total').value = '';
+  document.getElementById('buy-remark').value = '';
+  document.getElementById('buy-date').value = getTodayStr();
+}
+
+// -------------------- Sell Form --------------------
+function calcSellAmount() {
+  const price = parseFloat(document.getElementById('sell-price').value) || 0;
+  const weight = parseFloat(document.getElementById('sell-weight').value) || 0;
+  const amount = price * weight;
+  const fee = calcFee(amount, settings.sellFeeRate);
+  const net = amount - fee;
+
+  document.getElementById('sell-amount').value = amount > 0 ? amount.toFixed(2) : '';
+  document.getElementById('sell-fee').value = amount > 0 ? fee.toFixed(2) : '';
+  document.getElementById('sell-net').value = amount > 0 ? net.toFixed(2) : '';
+}
+
+function updateSellHint() {
+  const pos = computePosition();
+  const hint = document.getElementById('sell-available-hint');
+  if (hint) {
+    hint.textContent = `📦 当前可用持仓：${pos.currentWeight.toFixed(4)} g（均价 ¥${pos.avgPrice.toFixed(2)}/g）`;
+  }
+}
+
+function submitSell(event) {
+  event.preventDefault();
+
+  const price = parseFloat(document.getElementById('sell-price').value);
+  const weight = parseFloat(document.getElementById('sell-weight').value);
+  const date = document.getElementById('sell-date').value;
+  const remark = document.getElementById('sell-remark').value.trim();
+
+  if (!price || price <= 0) { showToast('请输入有效的卖出价格', 'error'); return; }
+  if (!weight || weight <= 0) { showToast('请输入有效的卖出重量', 'error'); return; }
+  if (!date) { showToast('请选择卖出日期', 'error'); return; }
+
+  // Validate against current position
+  const pos = computePosition();
+  if (weight > pos.currentWeight + 0.00001) {
+    showToast(`卖出重量超过持仓（可用 ${pos.currentWeight.toFixed(4)}g）`, 'error');
+    return;
+  }
+
+  const amount = price * weight;
+  const fee = calcFee(amount, settings.sellFeeRate);
+
+  /** @type {GoldRecord} */
+  const record = {
+    id: genId(),
+    type: 'sell',
+    date,
+    price: parseFloat(price.toFixed(2)),
+    weight: parseFloat(weight.toFixed(4)),
+    amount: parseFloat(amount.toFixed(2)),
+    fee: parseFloat(fee.toFixed(2)),
+    remark,
+  };
+
+  records.push(record);
+  saveRecords();
+
+  showToast(`✅ 卖出记录已保存：${weight.toFixed(4)}g × ¥${price.toFixed(2)}/g`, 'success');
+  resetSellForm();
+}
+
+function resetSellForm() {
+  document.getElementById('sell-price').value = '';
+  document.getElementById('sell-weight').value = '';
+  document.getElementById('sell-amount').value = '';
+  document.getElementById('sell-fee').value = '';
+  document.getElementById('sell-net').value = '';
+  document.getElementById('sell-remark').value = '';
+  document.getElementById('sell-date').value = getTodayStr();
+}
+
+// -------------------- Records Tab --------------------
+function renderRecords() {
+  const keyword = (document.getElementById('search-input').value || '').trim().toLowerCase();
+
+  let filtered = records.slice().sort((a, b) => {
+    // Sort by date descending, then by id descending
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    return b.id.localeCompare(a.id);
+  });
+
+  if (keyword) {
+    filtered = filtered.filter(r =>
+      (r.remark || '').toLowerCase().includes(keyword) ||
+      r.date.includes(keyword)
+    );
+  }
+
+  const countEl = document.getElementById('records-count');
+  const listEl = document.getElementById('records-list');
+
+  if (countEl) {
+    countEl.textContent = keyword
+      ? `找到 ${filtered.length} 条（共 ${records.length} 条）`
+      : `共 ${records.length} 条记录`;
+  }
+
+  if (!listEl) return;
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>${keyword ? '没有匹配的记录' : '暂无交易记录，快去添加吧！'}</p>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(r => {
+    const isBuy = r.type === 'buy';
+    const typeLabel = isBuy ? '买入' : '卖出';
+    const badgeClass = isBuy ? 'buy' : 'sell';
+    const feeLabel = isBuy ? '手续费' : '手续费';
+    const netLabel = isBuy ? '实付' : '到账';
+    const net = isBuy ? (r.amount + r.fee) : (r.amount - r.fee);
+    return `
+      <div class="record-item">
+        <span class="record-badge ${badgeClass}">${typeLabel}</span>
+        <div class="record-body">
+          <div class="record-main">
+            <span class="record-amount">¥${r.amount.toFixed(2)}</span>
+            <span class="record-weight">${r.weight.toFixed(4)}g</span>
+          </div>
+          <div class="record-meta">
+            <span class="record-meta-item">📅 ${r.date}</span>
+            <span class="record-meta-item">💰 ¥${r.price.toFixed(2)}/g</span>
+            <span class="record-meta-item">${feeLabel} ¥${r.fee.toFixed(2)}</span>
+            <span class="record-meta-item">${netLabel} ¥${net.toFixed(2)}</span>
+          </div>
+          ${r.remark ? `<div class="record-note">💬 ${escapeHtml(r.remark)}</div>` : ''}
+        </div>
+        <div class="record-actions">
+          <button class="btn btn-danger" onclick="deleteRecord('${r.id}')">删除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/**
+ * Delete a record by ID.
+ * @param {string} id
+ */
+function deleteRecord(id) {
+  if (!confirm('确认删除这条记录？此操作不可撤销。')) return;
+  records = records.filter(r => r.id !== id);
+  saveRecords();
+  renderRecords();
+  showToast('记录已删除', 'info');
+}
+
+// -------------------- Position --------------------
+/**
+ * Compute current position data.
+ * @returns {{ currentWeight: number, totalBuyWeight: number, totalSellWeight: number, avgPrice: number, totalCost: number, totalBuyAmount: number, totalSellAmount: number, buyFeeTotal: number, sellFeeTotal: number }}
+ */
+function computePosition() {
+  let totalBuyWeight = 0;
+  let totalBuyAmount = 0;  // sum of (price × weight)
+  let totalBuyFee = 0;
+  let totalSellWeight = 0;
+  let totalSellAmount = 0;
+  let totalSellFee = 0;
+
+  records.forEach(r => {
+    if (r.type === 'buy') {
+      totalBuyWeight += r.weight;
+      totalBuyAmount += r.amount;
+      totalBuyFee += r.fee;
+    } else if (r.type === 'sell') {
+      totalSellWeight += r.weight;
+      totalSellAmount += r.amount;
+      totalSellFee += r.fee;
+    }
+  });
+
+  const currentWeight = totalBuyWeight - totalSellWeight;
+  // Total cost includes fees: cost per gram = (totalBuyAmount + totalBuyFee) / totalBuyWeight
+  const totalCostWithFee = totalBuyAmount + totalBuyFee;
+  const avgPrice = totalBuyWeight > 0 ? totalCostWithFee / totalBuyWeight : 0;
+  // Remaining cost for current position
+  const remainingCost = currentWeight > 0 ? currentWeight * avgPrice : 0;
+
+  return {
+    currentWeight: Math.max(currentWeight, 0),
+    totalBuyWeight,
+    totalSellWeight,
+    avgPrice,
+    totalCost: remainingCost,
+    totalBuyAmount,
+    totalSellAmount,
+    buyFeeTotal: totalBuyFee,
+    sellFeeTotal: totalSellFee,
+    totalCostWithFee,
+  };
+}
+
+function renderPosition() {
+  const pos = computePosition();
+
+  safeSetText('pos-weight', pos.currentWeight.toFixed(4));
+  safeSetText('pos-avg-price', pos.avgPrice > 0 ? `¥${pos.avgPrice.toFixed(2)}/克` : '-- 元/克');
+  safeSetText('pos-total-cost', `¥${pos.totalCost.toFixed(2)}`);
+  safeSetText('pos-total-cost-sub', `均价 ¥${pos.avgPrice.toFixed(2)}/g`);
+  safeSetText('pos-avg-price-card', pos.avgPrice > 0 ? `¥${pos.avgPrice.toFixed(2)}` : '--');
+  safeSetText('pos-buy-weight', `${pos.totalBuyWeight.toFixed(4)} g`);
+  safeSetText('pos-buy-amount-sub', `¥${pos.totalBuyAmount.toFixed(2)}`);
+  safeSetText('pos-sell-weight', `${pos.totalSellWeight.toFixed(4)} g`);
+  safeSetText('pos-sell-amount-sub', `¥${pos.totalSellAmount.toFixed(2)}`);
+
+  // Reset pnl section
+  const pnlSection = document.getElementById('floating-pnl-section');
+  if (pnlSection) pnlSection.style.display = 'none';
+
+  // Keep current price input and recalc if filled
+  const priceInput = document.getElementById('current-price-input');
+  if (priceInput && priceInput.value) {
+    calcFloatingPnl();
+  }
+
+  updateSellHint();
+}
+
+function calcFloatingPnl() {
+  const currentPrice = parseFloat(document.getElementById('current-price-input').value) || 0;
+  const pnlSection = document.getElementById('floating-pnl-section');
+
+  if (!currentPrice || currentPrice <= 0) {
+    if (pnlSection) pnlSection.style.display = 'none';
+    return;
+  }
+
+  if (pnlSection) pnlSection.style.display = 'block';
+
+  const pos = computePosition();
+  const marketValue = currentPrice * pos.currentWeight;
+  const pnlAmount = (currentPrice - pos.avgPrice) * pos.currentWeight;
+  const pnlRatio = pos.totalCost > 0 ? (pnlAmount / pos.totalCost) * 100 : 0;
+  const isPositive = pnlAmount >= 0;
+
+  safeSetText('fpnl-current-price', `¥${currentPrice.toFixed(2)}/g`);
+  safeSetText('fpnl-avg-price', `¥${pos.avgPrice.toFixed(2)}/g`);
+  safeSetText('fpnl-weight', `${pos.currentWeight.toFixed(4)} g`);
+  safeSetText('fpnl-market-value', `¥${marketValue.toFixed(2)}`);
+
+  const pnlAmountEl = document.getElementById('fpnl-amount');
+  const pnlRatioEl = document.getElementById('fpnl-ratio');
+
+  if (pnlAmountEl) {
+    pnlAmountEl.textContent = `${isPositive ? '+' : ''}¥${pnlAmount.toFixed(2)}`;
+    pnlAmountEl.className = `pnl-val ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+  if (pnlRatioEl) {
+    pnlRatioEl.textContent = `${isPositive ? '+' : ''}${pnlRatio.toFixed(2)}%`;
+    pnlRatioEl.className = `pnl-val ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+}
+
+// -------------------- PnL Tab --------------------
+function renderPnl() {
+  const pos = computePosition();
+
+  // Realized PnL (simplified average cost method):
+  // realizedPnl = sellNetRevenue - (sellWeight * avgCostPerGram) - proportional buy fee
+  // avgCostPerGram (with fee) = (totalBuyAmount + totalBuyFee) / totalBuyWeight
+  // proportional buy fee for sold = (sellWeight / totalBuyWeight) * totalBuyFee
+  const avgCostPerGram = pos.totalBuyWeight > 0
+    ? (pos.totalBuyAmount + pos.buyFeeTotal) / pos.totalBuyWeight
+    : 0;
+
+  const proportionalBuyFee = pos.totalBuyWeight > 0
+    ? (pos.totalSellWeight / pos.totalBuyWeight) * pos.buyFeeTotal
+    : 0;
+
+  const sellNetRevenue = pos.totalSellAmount - pos.sellFeeTotal;
+  const costOfSold = pos.totalSellWeight * avgCostPerGram;
+  const realizedPnl = sellNetRevenue - costOfSold + proportionalBuyFee
+    // Simplified: realized = sellNet - (sellWeight * avgCostExclFee) - proportional buy fee
+    // More accurate: realized = sellNet - sellWeight * (totalBuyAmount/totalBuyWeight) - proportional buy fee
+    ;
+
+  // Corrected formula:
+  const avgBuyPriceExclFee = pos.totalBuyWeight > 0 ? pos.totalBuyAmount / pos.totalBuyWeight : 0;
+  const costOfSoldExclFee = pos.totalSellWeight * avgBuyPriceExclFee;
+  const realizedPnlFinal = sellNetRevenue - costOfSoldExclFee - proportionalBuyFee;
+
+  const totalFee = pos.buyFeeTotal + pos.sellFeeTotal;
+
+  const isPositive = realizedPnlFinal >= 0;
+
+  const realizedEl = document.getElementById('realized-pnl');
+  if (realizedEl) {
+    realizedEl.textContent = `${isPositive ? '+' : ''}¥${realizedPnlFinal.toFixed(2)}`;
+    realizedEl.className = `stat-value ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+
+  const detailEl = document.getElementById('detail-realized-pnl');
+  if (detailEl) {
+    detailEl.textContent = `${isPositive ? '+' : ''}¥${realizedPnlFinal.toFixed(2)}`;
+    detailEl.className = `pnl-val ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+
+  safeSetText('total-fee', `¥${totalFee.toFixed(2)}`);
+  safeSetText('total-buy-amount', `¥${pos.totalBuyAmount.toFixed(2)}`);
+  safeSetText('total-buy-weight-sub', `${pos.totalBuyWeight.toFixed(4)} g`);
+  safeSetText('total-sell-amount', `¥${pos.totalSellAmount.toFixed(2)}`);
+  safeSetText('total-sell-weight-sub', `${pos.totalSellWeight.toFixed(4)} g`);
+
+  safeSetText('detail-total-buy-with-fee', `¥${(pos.totalBuyAmount + pos.buyFeeTotal).toFixed(2)}`);
+  safeSetText('detail-total-sell-net', `¥${(pos.totalSellAmount - pos.sellFeeTotal).toFixed(2)}`);
+  safeSetText('detail-buy-fee', `¥${pos.buyFeeTotal.toFixed(2)}`);
+  safeSetText('detail-sell-fee', `¥${pos.sellFeeTotal.toFixed(2)}`);
+}
+
+// -------------------- Export / Import --------------------
+function exportData() {
+  const payload = {
+    version: '1.0',
+    exportTime: new Date().toISOString(),
+    settings,
+    records,
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gold-ledger-${dateStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ 数据已导出', 'success');
+}
+
+document.getElementById('import-input').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    try {
+      const payload = JSON.parse(ev.target.result);
+      if (!Array.isArray(payload.records)) {
+        showToast('文件格式错误，无法导入', 'error');
+        return;
+      }
+      if (!confirm(`导入将替换当前所有数据（${payload.records.length} 条记录）。确认继续？`)) {
+        return;
+      }
+      records = payload.records;
+      if (payload.settings) {
+        settings = { ...settings, ...payload.settings };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      }
+      saveRecords();
+      loadData();
+      renderRecords();
+      showToast(`✅ 导入成功：${records.length} 条记录`, 'success');
+    } catch (err) {
+      showToast('解析文件失败，请检查格式', 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  // Reset input
+  this.value = '';
+});
+
+// -------------------- Toast --------------------
+/**
+ * Show a toast notification.
+ * @param {string} message
+ * @param {'success'|'error'|'info'} [type]
+ * @param {number} [duration]
+ */
+function showToast(message, type = '', duration = 2800) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast${type ? ' ' + type : ''}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = 'toastOut 0.3s ease forwards';
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 320);
+  }, duration);
+}
+
+// -------------------- Utilities --------------------
+/**
+ * Get today's date string in YYYY-MM-DD format.
+ * @returns {string}
+ */
+function getTodayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Get date string for filename.
+ * @returns {string}
+ */
+function dateStr() {
+  return getTodayStr().replace(/-/g, '');
+}
+
+/**
+ * Safely set text content of element by id.
+ * @param {string} id
+ * @param {string} text
+ */
+function safeSetText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+/**
+ * Escape HTML special characters.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ------------------- GitHub Gist Sync --------------------
+const SYNC_CONFIG_KEY = 'gold_ledger_sync_config';
+
+/** Open sync settings modal */
+function openSyncModal() {
+  const modal = document.getElementById('sync-modal');
+  if (modal) modal.classList.add('show');
+  loadSyncConfigUI();
+}
+
+/** Close sync settings modal */
+function closeSyncModal() {
+  const modal = document.getElementById('sync-modal');
+  if (modal) modal.classList.remove('show');
+}
+
+/** Load saved token/gist_id from localStorage into UI */
+function loadSyncConfigUI() {
+  const cfg = getSyncConfig();
+  const tokenEl = document.getElementById('github-token-input');
+  const gistEl = document.getElementById('gist-id-input');
+  if (tokenEl) tokenEl.value = cfg.token || '';
+  if (gistEl) gistEl.value = cfg.gistId || '';
+  setSyncStatus(cfg.gistId ? 'idle' : 'idle', cfg.gistId ? '已配置，可同步' : '请先配置 Token 并同步');
+}
+
+/** Get sync config from localStorage */
+function getSyncConfig() {
+  try {
+    const raw = localStorage.getItem(SYNC_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+
+/** Save sync config to localStorage */
+function saveSyncConfig(token, gistId) {
+  const cfg = { token: token || '', gistId: gistId || '' };
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
+}
+
+/** Clear sync config */
+function clearSyncConfig() {
+  if (!confirm('清除同步配置？本地数据不受影响。')) return;
+  localStorage.removeItem(SYNC_CONFIG_KEY);
+  loadSyncConfigUI();
+  showToast('同步配置已清除', 'info');
+}
+
+/** Update sync status in modal */
+function setSyncStatus(type, message) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.className = 'sync-status ' + type;
+  el.textContent = message;
+}
+
+/** Push local data to Gist */
+async function syncPush() {
+  const tokenEl = document.getElementById('github-token-input');
+  const gistEl = document.getElementById('gist-id-input');
+  const token = (tokenEl?.value || '').trim();
+  const existingGistId = (gistEl?.value || '').trim();
+
+  if (!token) { showToast('请输入 GitHub Token', 'error'); return; }
+
+  setSyncStatus('syncing', '⏳ 正在上传到 GitHub Gist...');
+  showToast('正在上传到云端...', 'info', 1500);
+
+  const payload = {
+    version: '1.0',
+    exportTime: new Date().toISOString(),
+    settings,
+    records,
+  };
+  const content = JSON.stringify(payload, null, 2);
+
+  try {
+    let gistId = existingGistId;
+    let url, method, body;
+
+    if (!gistId) {
+      // Create new Gist
+      url = 'https://api.github.com/gists';
+      method = 'POST';
+      body = JSON.stringify({
+        public: false,
+        description: '京东浙商银行积存金记账数据（请勿手动修改）',
+        files: { 'gold-ledger.json': { content } },
+      });
+    } else {
+      // Update existing Gist
+      url = `https://api.github.com/gists/${gistId}`;
+      method = 'PATCH';
+      body = JSON.stringify({
+        files: { 'gold-ledger.json': { content } },
+      });
+    }
+
+    const resp = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+      },
+      body,
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`GitHub API ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const data = await resp.json();
+    gistId = data.id;
+
+    // Save config
+    saveSyncConfig(token, gistId);
+    if (gistEl) gistEl.value = gistId;
+
+    setSyncStatus('done', `✅ 上传成功！Gist ID: ${gistId.slice(0, 12)}...`);
+    showToast('☁️ 已上传到云端', 'success');
+  } catch (err) {
+    console.error('Sync push error:', err);
+    setSyncStatus('error', `❌ 上传失败：${err.message.slice(0, 100)}`);
+    showToast('上传失败，请检查 Token 和网络', 'error');
+  }
+}
+
+/** Pull data from Gist to local */
+async function syncPull() {
+  const tokenEl = document.getElementById('github-token-input');
+  const gistEl = document.getElementById('gist-id-input');
+  const token = (tokenEl?.value || '').trim();
+  const gistId = (gistEl?.value || '').trim();
+
+  if (!token) { showToast('请输入 GitHub Token', 'error'); return; }
+  if (!gistId) { showToast('请先上传一次以获取 Gist ID', 'error'); return; }
+
+  setSyncStatus('syncing', '⏳ 正在从 GitHub Gist 拉取数据...');
+  showToast('正在从云端拉取...', 'info', 1500);
+
+  try {
+    const headers = {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+    };
+    const resp = await fetch(`https://api.github.com/gists/${gistId}`, { headers });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`GitHub API ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const data = await resp.json();
+    const file = data.files?.['gold-ledger.json'];
+    if (!file?.content) throw new Error('Gist 中未找到 gold-ledger.json 文件');
+
+    const payload = JSON.parse(file.content);
+    if (!Array.isArray(payload.records)) throw new Error('数据格式错误');
+
+    if (!confirm(`将从云端拉取 ${payload.records.length} 条记录，替换当前本地数据。确认继续？`)) return;
+
+    records = payload.records;
+    if (payload.settings) {
+      settings = { ...settings, ...payload.settings };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      // Sync UI
+      const b = document.getElementById('buy-fee-rate-input');
+      const s = document.getElementById('sell-fee-rate-input');
+      const m = document.getElementById('min-fee-input');
+      if (b) b.value = settings.buyFeeRate;
+      if (s) s.value = settings.sellFeeRate;
+      if (m) m.value = settings.minFee;
+      updateHeaderSubtitle();
+    }
+    saveRecords();
+    loadData();
+    renderRecords();
+    renderPosition();
+    renderPnl();
+
+    setSyncStatus('done', `✅ 拉取成功！共 ${records.length} 条记录`);
+    showToast(`☁️ 已从云端拉取 ${records.length} 条记录`, 'success');
+  } catch (err) {
+    console.error('Sync pull error:', err);
+    setSyncStatus('error', `❌ 拉取失败：${err.message.slice(0, 100)}`);
+    showToast('拉取失败，请检查 Token 和 Gist ID', 'error');
+  }
+}
+
+// ------------------- Initialization --------------------
+function init() {
+  loadData();
+
+  // Set default dates
+  const today = getTodayStr();
+  const buyDateEl = document.getElementById('buy-date');
+  const sellDateEl = document.getElementById('sell-date');
+  if (buyDateEl) buyDateEl.value = today;
+  if (sellDateEl) sellDateEl.value = today;
+
+  // Initial render
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  updateSellHint();
+
+  // Silent auto-pull from Gist (if configured)
+  const cfg = getSyncConfig();
+  if (cfg.token && cfg.gistId) {
+    silentPull(cfg);
+  }
+}
+
+/** Silent pull: no toasts, no UI disruption, just update data */
+async function silentPull(cfg) {
+  try {
+    const headers = {
+      'Authorization': `token ${cfg.token}`,
+      'Accept': 'application/vnd.github.v3+json',
+    };
+    const resp = await fetch(`https://api.github.com/gists/${cfg.gistId}`, { headers });
+    if (!resp.ok) return; // silently fail
+    const data = await resp.json();
+    const file = data.files?.['gold-ledger.json'];
+    if (!file?.content) return;
+    const payload = JSON.parse(file.content);
+    if (!Array.isArray(payload.records)) return;
+
+    // Only update if remote has more records (simple heuristic)
+    if (payload.records.length > records.length) {
+      records = payload.records;
+      if (payload.settings) {
+        settings = { ...settings, ...payload.settings };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      }
+      saveRecords();
+      // Re-render UI
+      renderRecords();
+      renderPosition();
+      renderPnl();
+      updateSellHint();
+      // Update settings UI if modal is open
+      const b = document.getElementById('buy-fee-rate-input');
+      const s = document.getElementById('sell-fee-rate-input');
+      const m = document.getElementById('min-fee-input');
+      if (b) b.value = settings.buyFeeRate;
+      if (s) s.value = settings.sellFeeRate;
+      if (m) m.value = settings.minFee;
+      updateHeaderSubtitle();
+      console.log('[Sync] Auto-pulled', payload.records.length, 'records from cloud');
+    }
+  } catch (e) {
+    console.log('[Sync] Auto-pull failed silently:', e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
