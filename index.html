@@ -1157,7 +1157,7 @@
 <div class="tab-content" id="tab-records">
   <div class="card" style="padding: 14px;">
     <div class="search-bar">
-      <input type="search" id="search-input" placeholder="🔍 搜索备注关键字..."
+      <input type="search" id="search-input" placeholder="🔍 搜索类型/日期/价格/备注..."
              oninput="renderRecords()" />
       <button class="btn btn-secondary" onclick="document.getElementById('search-input').value=''; renderRecords()">重置</button>
     </div>
@@ -1510,6 +1510,9 @@ function submitBuy(event) {
 
   records.push(record);
   saveRecords();
+  renderRecords();
+  renderPosition();
+  renderPnl();
 
   showToast(`✅ 买入记录已保存：${weight.toFixed(4)}g × ¥${price.toFixed(2)}/g`, 'success');
   resetBuyForm();
@@ -1599,6 +1602,10 @@ function submitSell(event) {
 
   showToast(`✅ 卖出记录已保存：${weight.toFixed(4)}g × ¥${price.toFixed(2)}/g`, 'success');
   resetSellForm();
+
+  // 自动跳转到交易记录页，方便查看
+  const recordsTabBtn = document.querySelector('[onclick*="switchTab(\'records\'"]');
+  if (recordsTabBtn) switchTab('records', recordsTabBtn);
 }
 
 function resetSellForm() {
@@ -1622,10 +1629,16 @@ function renderRecords() {
   });
 
   if (keyword) {
-    filtered = filtered.filter(r =>
-      (r.remark || '').toLowerCase().includes(keyword) ||
-      r.date.includes(keyword)
-    );
+    filtered = filtered.filter(r => {
+      const typeLabel = r.type === 'buy' ? '买入' : '卖出';
+      return (r.remark || '').toLowerCase().includes(keyword)
+        || r.date.includes(keyword)
+        || typeLabel.includes(keyword)
+        || r.price.toFixed(2).includes(keyword)
+        || r.weight.toFixed(4).includes(keyword)
+        || r.amount.toFixed(2).includes(keyword)
+        || r.fee.toFixed(2).includes(keyword);
+    });
   }
 
   const countEl = document.getElementById('records-count');
@@ -1739,10 +1752,35 @@ function renderRecords() {
  * @param {string} id
  */
 function deleteRecord(id) {
+  const record = records.find(r => r.id === id);
+  if (!record) return;
+
   if (!confirm('确认删除这条记录？此操作不可撤销。')) return;
+
+  // 如果删除的是买入记录，清理所有卖出记录中指向此买入的关联
+  if (record.type === 'buy') {
+    records.forEach(r => {
+      if (r.type === 'sell' && Array.isArray(r.links)) {
+        const beforeLen = r.links.length;
+        r.links = r.links.filter(link => link.buyId !== id);
+        // 如果有关联被移除，提示用户
+        if (r.links.length < beforeLen) {
+          // 如果清理后 links 为空，彻底清除
+          if (r.links.length === 0) {
+            r.links = [];
+          }
+        }
+      }
+    });
+  }
+
+  // 如果删除的是卖出记录，直接删除即可（links 随卖出记录一起移除）
+
   records = records.filter(r => r.id !== id);
   saveRecords();
   renderRecords();
+  renderPosition();
+  renderPnl();
   showToast('记录已删除', 'info');
 }
 
