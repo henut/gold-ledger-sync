@@ -1180,6 +1180,10 @@
   <div style="font-size:12px; color:#7B5E0A; margin-top:4px;">
     加权均价：<strong id="pos-avg-price">-- 元/克</strong>
   </div>
+  <div id="pos-ultimate-price-info" style="font-size:12px; color:#C62828; margin-top:6px; display:none;">
+    🔥 究极回本价：<strong id="pos-ultimate-price">-- 元/克</strong>
+    <div style="font-size:11px; color:#A0760E; margin-top:2px;" id="pos-ultimate-price-hint"></div>
+  </div>
   <div id="pos-bonus-info" style="font-size:12px; color:#7B5E0A; margin-top:4px; display:none;">
     赠金：<strong id="pos-bonus-weight">0.0000 g</strong>
   </div>
@@ -1206,6 +1210,11 @@
       <div class="stat-label">已卖出合计</div>
       <div class="stat-value" style="color:var(--sell-text)" id="pos-sell-weight">0.0000 g</div>
       <div class="stat-sub" id="pos-sell-amount-sub">¥0.00</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #C62828; grid-column: 1 / -1;">
+      <div class="stat-label">🔥 究极回本价</div>
+      <div class="stat-value" id="pos-ultimate-price-card" style="color:#C62828;">--</div>
+      <div class="stat-sub" id="pos-ultimate-price-sub">元/克</div>
     </div>
   </div>
 
@@ -2320,6 +2329,58 @@ function renderPosition() {
   const bonusEl = document.getElementById('pos-bonus-info');
   if (bonusEl) {
     bonusEl.style.display = pos.bonusRemainingWeight > 0.0001 ? 'block' : 'none';
+  }
+
+  // ===== 究极回本价计算 =====
+  // 究极回本价 = (持仓克重成本 - 已实现盈亏) / 持仓克重
+  // 含义：已实现的利润可以抵扣持仓成本，算出"真正回本"的价格
+  let realizedPnl = 0;
+
+  // 优先使用关联方式计算已实现盈亏（更精确）
+  const hasAnyLinks = records.some(r => r.type === 'sell' && Array.isArray(r.links) && r.links.length > 0);
+  if (hasAnyLinks) {
+    // 基于关联计算：逐笔卖出累加盈亏
+    records.forEach(r => {
+      if (r.type !== 'sell' || !Array.isArray(r.links) || r.links.length === 0) return;
+      const sellNetAmount = r.amount - r.fee;
+      const sellNetPricePerGram = r.weight > 0 ? sellNetAmount / r.weight : 0;
+      r.links.forEach(link => {
+        const buy = records.find(b => b.id === link.buyId);
+        const buyCostPrice = buy ? buy.price : link.buyPrice || 0;
+        realizedPnl += (sellNetPricePerGram - buyCostPrice) * link.weight;
+      });
+    });
+  } else {
+    // 无关联时回退到均价法
+    const avgBuyPriceExclFee = pos.totalBuyWeight > 0 ? pos.totalBuyAmount / pos.totalBuyWeight : 0;
+    const costOfSoldExclFee = pos.totalSellWeight * avgBuyPriceExclFee;
+    const proportionalBuyFee = pos.totalBuyWeight > 0 ? (pos.totalSellWeight / pos.totalBuyWeight) * pos.buyFeeTotal : 0;
+    const sellNetRevenue = pos.totalSellAmount - pos.sellFeeTotal;
+    realizedPnl = sellNetRevenue - costOfSoldExclFee - proportionalBuyFee;
+  }
+
+  const ultimatePriceEl1 = document.getElementById('pos-ultimate-price');
+  const ultimateInfoEl = document.getElementById('pos-ultimate-price-info');
+  const ultimateHintEl = document.getElementById('pos-ultimate-price-hint');
+  const ultimatePriceCardEl = document.getElementById('pos-ultimate-price-card');
+  const ultimatePriceSubEl = document.getElementById('pos-ultimate-price-sub');
+
+  if (pos.currentWeight > 0.0001) {
+    const ultimatePrice = (pos.totalCost - realizedPnl) / pos.currentWeight;
+    const displayPrice = ultimatePrice > 0 ? `¥${ultimatePrice.toFixed(2)}/克` : '¥0.00/克（已全回本 🎉）';
+
+    if (ultimatePriceEl1) ultimatePriceEl1.textContent = displayPrice;
+    if (ultimateInfoEl) ultimateInfoEl.style.display = 'block';
+    if (ultimatePriceCardEl) ultimatePriceCardEl.textContent = ultimatePrice > 0 ? `¥${ultimatePrice.toFixed(2)}` : '已回本 🎉';
+
+    const pnlSign = realizedPnl >= 0 ? '+' : '';
+    const hint = `(¥${pos.totalCost.toFixed(2)} - ${pnlSign}¥${realizedPnl.toFixed(2)}) / ${pos.currentWeight.toFixed(4)}g`;
+    if (ultimateHintEl) ultimateHintEl.textContent = hint;
+    if (ultimatePriceSubEl) ultimatePriceSubEl.textContent = ultimatePrice <= 0 ? '已全部回本！' : `已实现盈亏 ${pnlSign}¥${realizedPnl.toFixed(2)}`;
+  } else {
+    if (ultimateInfoEl) ultimateInfoEl.style.display = 'none';
+    if (ultimatePriceCardEl) ultimatePriceCardEl.textContent = '--';
+    if (ultimatePriceSubEl) ultimatePriceSubEl.textContent = '无持仓';
   }
 
   // Reset pnl section
