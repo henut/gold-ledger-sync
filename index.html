@@ -1161,7 +1161,10 @@
              oninput="renderRecords()" />
       <button class="btn btn-secondary" onclick="document.getElementById('search-input').value=''; renderRecords()">重置</button>
     </div>
-    <div style="font-size:12px; color:var(--gray-500); margin-bottom:8px;" id="records-count">共 0 条记录</div>
+    <div style="font-size:12px; color:var(--gray-500); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;" id="records-count-row">
+      <span id="records-count">共 0 条记录</span>
+      <button class="btn btn-danger" style="font-size:12px; padding:4px 10px;" onclick="clearAllRecords()">🗑️ 清空全部</button>
+    </div>
   </div>
   <div class="records-list" id="records-list">
     <!-- Records rendered by JS -->
@@ -1782,6 +1785,26 @@ function deleteRecord(id) {
   renderPosition();
   renderPnl();
   showToast('记录已删除', 'info');
+}
+
+/**
+ * 清空所有交易记录
+ */
+function clearAllRecords() {
+  if (records.length === 0) {
+    showToast('没有可清空的记录', 'info');
+    return;
+  }
+  if (!confirm(`⚠️ 确认清空全部 ${records.length} 条交易记录？此操作不可撤销！`)) return;
+  if (!confirm('二次确认：所有买入、卖出记录及关联关系将全部删除，真的继续？')) return;
+
+  records = [];
+  saveRecords();
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  updateSellHint();
+  showToast('✅ 已清空全部记录', 'success');
 }
 
 /**
