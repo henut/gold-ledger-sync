@@ -7,11 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="mobile-web-app-capable" content="yes" />
-<<<<<<< HEAD
   <title>京东×浙商银行积存金记账</title>
-=======
-  <title>京东 × 浙商银行积存金记账</title>
->>>>>>> 271e932845cbf1fd1d8eee6f39936b8f4e60adc8
   <style>
     /* ===== CSS Reset & Variables ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1510,6 +1506,8 @@ function submitBuy(event) {
     }
     saveRecords();
     renderRecords();
+    renderPosition();
+    renderPnl();
     cancelEdit();
     showToast(`✅ 买入记录已更新`, 'success');
     return;
@@ -1599,6 +1597,8 @@ function submitSell(event) {
     }
     saveRecords();
     renderRecords();
+    renderPosition();
+    renderPnl();
     cancelEdit();
     showToast(`✅ 卖出记录已更新`, 'success');
     return;
@@ -1681,20 +1681,12 @@ function renderRecords() {
     if (!isBuy) {
       const isLinked = Array.isArray(r.links) && r.links.length > 0;
       if (isLinked) {
-<<<<<<< HEAD
         // 已关联：显示状态标签 + 修改关联 + 取消关联按钮
         const totalLinked = r.links.reduce((s, l) => s + l.weight, 0);
         linkHtml = `
           <span class="tag tag-linked">已关联(${totalLinked.toFixed(4)}g)</span>
           <button class="btn btn-sm btn-outline" onclick="openLinkOverlay('${r.id}')" style="margin-left:4px;">修改关联</button>
           <button class="btn btn-sm btn-danger" onclick="cancelLink('${r.id}')" style="margin-left:4px;">取消关联</button>`;
-=======
-        // 已关联：显示状态标签 + 修改关联按钮
-        const totalLinked = r.links.reduce((s, l) => s + l.weight, 0);
-        linkHtml = `
-          <span class="tag tag-linked">已关联(${totalLinked.toFixed(4)}g)</span>
-          <button class="btn btn-sm btn-outline" onclick="openLinkOverlay('${r.id}')" style="margin-left:4px;">修改关联</button>`;
->>>>>>> 271e932845cbf1fd1d8eee6f39936b8f4e60adc8
       } else {
         // 检查是否有可用买入
         const hasAvailable = records.some(rec =>
@@ -1971,16 +1963,15 @@ function renderLinkOverlayBody(sellId) {
     .filter(r => r.type === 'buy')
     .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
 
-<<<<<<< HEAD
+  // 如果已有 links，预填
+  const existingLinks = Array.isArray(sell.links) ? sell.links : [];
+
   const availableBuys = buyRecords.filter(b => {
     // 有剩余可用克重，或已经关联到当前卖出的买入都要显示
     const remaining = getBuyRemainingWeight(b.id);
     const alreadyLinkedToThisSell = existingLinks.some(l => l.buyId === b.id);
     return remaining > 0.0001 || alreadyLinkedToThisSell;
   });
-=======
-  const availableBuys = buyRecords.filter(b => getBuyRemainingWeight(b.id) > 0.0001);
->>>>>>> 271e932845cbf1fd1d8eee6f39936b8f4e60adc8
 
   if (availableBuys.length === 0) {
     html += '<div class="link-empty-state">没有可关联的买入记录</div>';
@@ -1992,16 +1983,9 @@ function renderLinkOverlayBody(sellId) {
   // 渲染买入批次列表
   html += '<div class="link-batch-list" id="link-batch-list">';
 
-  // 如果已有 links，预填
-  const existingLinks = Array.isArray(sell.links) ? sell.links : [];
-
   availableBuys.forEach(buy => {
     const remaining = getBuyRemainingWeight(buy.id);
-<<<<<<< HEAD
     const linkedWeight = existingLinks.find(l => l.buyId === buy.id)?.weight || 0;
-=======
-    const linkedWeight = existingLinks.find(l => l.buyId === buyId)?.weight || 0;
->>>>>>> 271e932845cbf1fd1d8eee6f39936b8f4e60adc8
 
     html += `
       <div class="link-batch-item" data-buy-id="${buy.id}">
@@ -2019,10 +2003,7 @@ function renderLinkOverlayBody(sellId) {
                  oninput="onLinkWeightInput('${buy.id}')"
                  placeholder="0.0000" />
           <span class="batch-unit">g</span>
-<<<<<<< HEAD
           <button class="btn btn-sm btn-secondary" style="margin-left:4px; padding:2px 8px; font-size:12px;" onclick="fillAllWeight('${buy.id}')">全部</button>
-=======
->>>>>>> 271e932845cbf1fd1d8eee6f39936b8f4e60adc8
         </div>
         <div class="link-profit-row" id="link-profit-${buy.id}"></div>
       </div>`;
@@ -2050,7 +2031,6 @@ function onLinkWeightInput(buyId) {
 }
 
 /**
-<<<<<<< HEAD
  * 一键填入某笔买入的全部可用克重
  * @param {string} buyId
  */
@@ -2093,8 +2073,6 @@ function fillAllWeight(buyId) {
 }
 
 /**
-=======
->>>>>>> 271e932845cbf1fd1d8eee6f39936b8f4e60adc8
  * 更新关联弹窗的汇总信息
  */
 function updateLinkSummary() {
@@ -2219,6 +2197,7 @@ function confirmLink() {
 
   closeLinkOverlay();
   renderRecords();
+  renderPosition();
   renderPnl();
   showToast('✅ 关联成功', 'success');
 }
@@ -2238,10 +2217,7 @@ function cancelLink(sellId) {
 
   closeLinkOverlay();
   renderRecords();
-<<<<<<< HEAD
   renderPosition();
-=======
->>>>>>> 271e932845cbf1fd1d8eee6f39936b8f4e60adc8
   renderPnl();
   showToast('已取消关联', 'info');
 }
