@@ -1,0 +1,2985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#E4393C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>京东 × 浙商银行积存金记账</title>
+  <style>
+    /* ===== CSS Reset & Variables ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --jd-red: #E4393C;
+      --jd-dark-red: #C1272D;
+      --jd-light-red: #fff0f0;
+      --gold: #D4A017;
+      --gold-light: #FFF8E1;
+      --buy-bg: #E8F5E9;
+      --buy-text: #2E7D32;
+      --sell-bg: #FFF3E0;
+      --sell-text: #E65100;
+      --profit-pos: #E4393C;
+      --profit-neg: #2E7D32;
+      --gray-50: #FAFAFA;
+      --gray-100: #F5F5F5;
+      --gray-200: #EEEEEE;
+      --gray-300: #E0E0E0;
+      --gray-500: #9E9E9E;
+      --gray-600: #757575;
+      --gray-700: #616161;
+      --gray-800: #424242;
+      --gray-900: #212121;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+                   'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      background: linear-gradient(135deg, var(--jd-red) 0%, var(--jd-dark-red) 100%);
+      color: #fff;
+      padding: 20px 16px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(228,57,60,0.35);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-title .gold-icon {
+      font-size: 22px;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-header {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-header:hover { background: rgba(255,255,255,0.3); }
+
+    /* ===== Tabs ===== */
+    .tabs-wrapper {
+      background: #fff;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 88px;
+      z-index: 99;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabs-wrapper::-webkit-scrollbar { display: none; }
+
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--gray-200);
+      min-width: max-content;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-600);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover { color: var(--jd-red); }
+
+    .tab-btn.active {
+      color: var(--jd-red);
+      border-bottom-color: var(--jd-red);
+      font-weight: 600;
+    }
+
+    /* ===== Tab Content ===== */
+    .tab-content { display: none; padding: 16px; max-width: 800px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    /* ===== Cards ===== */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .card-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .card-icon.buy { background: var(--buy-bg); }
+    .card-icon.sell { background: var(--sell-bg); }
+    .card-icon.info { background: var(--gold-light); }
+    .card-icon.settings { background: #E3F2FD; }
+
+    /* ===== Forms ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-600);
+    }
+
+    label .required { color: var(--jd-red); margin-left: 2px; }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="search"],
+    select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--gray-900);
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--jd-red);
+      box-shadow: 0 0 0 3px rgba(228,57,60,0.1);
+    }
+
+    input[readonly] {
+      background: var(--gray-50);
+      color: var(--gray-700);
+      cursor: default;
+    }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+
+    .input-hint.highlight {
+      color: var(--jd-red);
+      font-weight: 500;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 40px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--jd-red), var(--jd-dark-red));
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(228,57,60,0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--jd-dark-red), #a01e22);
+      box-shadow: 0 4px 12px rgba(228,57,60,0.4);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
+    }
+    .btn-secondary:hover { background: var(--gray-200); }
+
+    .btn-danger {
+      background: #fff;
+      color: var(--jd-red);
+      border: 1px solid var(--jd-red);
+      padding: 5px 10px;
+      font-size: 12px;
+      min-height: 30px;
+    }
+    .btn-danger:hover { background: var(--jd-light-red); }
+
+    .btn-full { width: 100%; }
+
+    /* ===== Stats Grid ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      border-left: 4px solid transparent;
+    }
+
+    .stat-card.red { border-left-color: var(--jd-red); }
+    .stat-card.green { border-left-color: var(--buy-text); }
+    .stat-card.orange { border-left-color: var(--sell-text); }
+    .stat-card.gold { border-left-color: var(--gold); }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .stat-value.red { color: var(--jd-red); }
+    .stat-value.green { color: var(--buy-text); }
+    .stat-value.profit-pos { color: var(--profit-pos); }
+    .stat-value.profit-neg { color: var(--profit-neg); }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+
+    /* ===== Transaction Records ===== */
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .search-bar input { flex: 1; }
+
+    .records-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .record-item {
+      background: #fff;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border: 1px solid var(--gray-200);
+      transition: box-shadow 0.2s;
+    }
+    .record-item:hover { box-shadow: var(--shadow-md); }
+
+    .record-badge {
+      flex-shrink: 0;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .record-badge.buy { background: var(--buy-bg); color: var(--buy-text); }
+    .record-badge.sell { background: var(--sell-bg); color: var(--sell-text); }
+
+    .record-body { flex: 1; min-width: 0; }
+
+    .record-main {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .record-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .record-weight {
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .record-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 5px;
+    }
+
+    .record-meta-item {
+      font-size: 11px;
+      color: var(--gray-500);
+      background: var(--gray-100);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .record-note {
+      margin-top: 5px;
+      font-size: 12px;
+      color: var(--gray-600);
+      font-style: italic;
+    }
+
+    .record-actions { flex-shrink: 0; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-500);
+    }
+
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ===== Position Analysis ===== */
+    .position-highlight {
+      background: linear-gradient(135deg, #fff8e1, #fff3cd);
+      border: 1px solid #ffe082;
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .position-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .position-weight {
+      font-size: 32px;
+      font-weight: 800;
+      color: #7B5E0A;
+    }
+
+    .position-unit {
+      font-size: 14px;
+      color: #A0760E;
+      font-weight: 500;
+    }
+
+    .pnl-section {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--gray-50);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+    }
+
+    .pnl-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 10px;
+    }
+
+    .pnl-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .pnl-row:last-child { border-bottom: none; }
+
+    .pnl-key { font-size: 12px; color: var(--gray-600); }
+    .pnl-val { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .pnl-val.profit-pos { color: var(--profit-pos); }
+    .pnl-val.profit-neg { color: var(--profit-neg); }
+
+    /* ===== Settings ===== */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-label { font-size: 13px; color: var(--gray-700); }
+    .settings-input {
+      width: 100px;
+      padding: 7px 10px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      text-align: right;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .settings-input:focus { border-color: var(--jd-red); }
+
+    /* ===== Toast ===== */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(33, 33, 33, 0.9);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      max-width: 300px;
+      text-align: center;
+      animation: toastIn 0.3s ease;
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.success { background: rgba(46, 125, 50, 0.92); }
+    .toast.error   { background: rgba(211, 47, 47, 0.92); }
+    .toast.info    { background: rgba(25, 118, 210, 0.92); }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-10px); }
+    }
+
+    /* ===== Divider ===== */
+    .section-divider {
+      height: 1px;
+      background: var(--gray-200);
+      margin: 16px 0;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 600px) {
+      .header-title { font-size: 16px; }
+      .btn-header { padding: 5px 10px; font-size: 11px; }
+      .tabs-wrapper { top: 76px; }
+      .tab-btn { min-width: 64px; padding: 10px 10px; font-size: 12px; }
+      .tab-content { padding: 12px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .record-item { flex-wrap: wrap; }
+      .card { padding: 14px; }
+      .position-weight { font-size: 26px; }
+    }
+
+    @media (max-width: 400px) {
+      .header-actions { flex-direction: column; gap: 4px; }
+    }
+
+    /* ===== Hidden file input ===== */
+    #import-input { display: none; }
+
+    /* ===== Loading ===== */
+    .loading-mask {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.7);
+      z-index: 9998;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--jd-red);
+    }
+    .loading-mask.show { display: flex; }
+
+    /* ===== Sync Modal ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--gray-500);
+      padding: 4px;
+      line-height: 1;
+    }
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      padding: 12px 20px 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      border-top: 1px solid var(--gray-200);
+    }
+    .sync-status {
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .sync-status.idle {
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+    .sync-status.syncing {
+      background: #E3F2FD;
+      color: #1565C0;
+    }
+    .sync-status.done {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .sync-status.error {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    .sync-hint {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* Mobile sync modal optimization */
+    @media (max-width: 600px) {
+      .modal-box {
+        max-width: 100%;
+        border-radius: var(--radius) var(--radius) 0 0;
+        max-height: 85vh;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      .modal-body {
+        padding: 16px;
+      }
+      .modal-header {
+        padding: 14px 16px;
+      }
+      .modal-footer {
+        padding: 10px 16px 14px;
+      }
+      #github-token-input, #gist-id-input {
+        font-size: 16px !important;
+        padding: 10px 12px;
+      }
+    }
+
+    /* ===== Link Overlay (交易关联弹窗) ===== */
+    .link-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 11000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .link-overlay.show { display: flex; }
+    .link-overlay-box {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 560px;
+      max-height: 85vh;
+      overflow-y: auto;
+      animation: modalIn 0.25s ease;
+    }
+    .link-overlay-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .link-overlay-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    .link-overlay-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--gray-500);
+      padding: 4px 8px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .link-overlay-close:hover { background: var(--gray-100); }
+    .link-overlay-body { padding: 20px; }
+    .link-overlay-footer {
+      padding: 12px 20px 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .link-sell-info {
+      background: var(--gold-light);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--gray-700);
+      line-height: 1.8;
+    }
+    .link-sell-info .label { color: var(--gray-500); font-size: 12px; }
+    .link-sell-info .value { font-weight: 600; color: var(--gray-900); }
+
+    .link-batch-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .link-batch-item {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      transition: border-color 0.2s;
+    }
+    .link-batch-item:focus-within {
+      border-color: var(--jd-red);
+    }
+    .link-batch-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+    .link-batch-head .batch-date { font-weight: 600; color: var(--gray-800); }
+    .link-batch-head .batch-price { color: var(--buy-text); }
+    .link-batch-head .batch-remaining { color: var(--gray-500); font-size: 12px; }
+
+    .link-batch-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .link-batch-input-row label {
+      font-size: 12px;
+      color: var(--gray-600);
+      white-space: nowrap;
+    }
+    .link-batch-input-row input {
+      width: 120px;
+      padding: 7px 10px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      text-align: right;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .link-batch-input-row input:focus {
+      border-color: var(--jd-red);
+      box-shadow: 0 0 0 3px rgba(228,57,60,0.1);
+    }
+    .link-batch-input-row .batch-unit { font-size: 12px; color: var(--gray-500); }
+
+    .link-profit-row {
+      margin-top: 6px;
+      font-size: 12px;
+      min-height: 18px;
+    }
+
+    .link-summary-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--gray-100);
+      border-radius: var(--radius-sm);
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--gray-700);
+    }
+    .link-summary-bar .summary-allocated { font-weight: 600; }
+    .link-summary-bar .summary-total-profit {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .link-empty-state {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--gray-500);
+      font-size: 13px;
+    }
+
+    /* 交易记录中的关联标签 */
+    .record-link-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      background: #E8F5E9;
+      color: #2E7D32;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+    }
+    .record-link-tag:hover { background: #C8E6C9; }
+    .record-link-tag.unlinked {
+      background: #FFF3E0;
+      color: #E65100;
+    }
+    .record-link-tag.unlinked:hover { background: #FFE0B2; }
+
+    .record-pnl {
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+    .record-pnl.profit-pos { color: var(--profit-pos); }
+    .record-pnl.profit-neg { color: var(--profit-neg); }
+
+    /* ===== 交易关联标签样式（与ETF页面一致）===== */
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: default; }
+    .tag.tag-linked { background: #E8F5E9; color: #2E7D32; cursor: pointer; }
+    .tag.tag-warn { background: #FFF3E0; color: #E65100; }
+    .tag.tag-blue { background: #E3F2FD; color: #1565C0; cursor: pointer; }
+    .tag.tag-blue:hover { background: #BBDEFB; }
+
+    /* ===== 盈亏文字颜色（与ETF页面一致）===== */
+    .profit-positive { color: var(--profit-pos); font-weight: 600; }
+    .profit-negative { color: var(--profit-neg); font-weight: 600; }
+
+    /* ===== 小按钮样式（与ETF页面一致）===== */
+    .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+    .btn-outline { background: #fff; color: var(--jd-red); border: 1px solid var(--jd-red); }
+    .btn-outline:hover { background: var(--jd-light-red); }
+    .btn-ghost { background: none; border: 1px solid #ddd; color: #666; }
+    .btn-ghost:hover { background: var(--gray-100); }
+    .btn-danger { background: #fff; color: var(--jd-red); border: 1px solid var(--jd-red); }
+    .btn-danger:hover { background: var(--jd-light-red); }
+
+    /* 赠金标签 */
+    .tag-bonus { background: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+<!-- Loading -->
+<div class="loading-mask" id="loading-mask">⏳ 处理中...</div>
+<!-- Hidden file input for import -->
+<input type="file" id="import-input" accept=".json" />
+
+<!-- ===== Header ===== -->
+<header class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">
+        <span class="gold-icon">🥇</span>
+        京东 × 浙商银行积存金记账
+      </div>
+      <div class="header-subtitle" id="header-subtitle">买入费率 0% · 卖出费率 0.4%</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header" onclick="exportData()">📤 导出</button>
+      <button class="btn-header" onclick="document.getElementById('import-input').click()">📥 导入</button>
+      <button class="btn-header" onclick="var c=document.getElementById('settings-card-buy');c.style.display=c.style.display==='none'?'block':'none';">⚙️ 费率</button>
+      <button class="btn-header" id="btn-sync" onclick="openSyncModal()">☁️ 同步</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Sync Modal ===== -->
+<div class="modal-overlay" id="sync-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">☁️ 云同步设置</span>
+      <button class="modal-close" onclick="closeSyncModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="sync-status idle" id="sync-status">
+        配置 GitHub Token 后可实现多端云同步（手机 ↔ 电脑）
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label for="github-token-input">GitHub Token <span class="required">*</span></label>
+        <input type="password" id="github-token-input" placeholder="ghp_xxxxxxxxxxxxxxxx"
+               style="margin-top:5px;" autocomplete="off" />
+        <div class="sync-hint">
+          Token 需要 <b>gist</b> 权限。在 GitHub → Settings → Developer settings → Personal access tokens (classic) 中生成。
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label for="gist-id-input">Gist ID（留空则自动创建）</label>
+        <input type="text" id="gist-id-input" placeholder="首次上传后自动填入，也可手动输入"
+               style="margin-top:5px; font-size:16px;" />
+        <div class="sync-hint">
+          首次同步将自动创建私密 Gist 并保存 ID。多端使用同一 Gist ID 即可同步数据。
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="syncPush()">☁️ 上传到云端</button>
+        <button class="btn btn-secondary" onclick="syncPull()">⬇️ 从云端拉取</button>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-secondary" style="width:100%;font-size:12px;" onclick="clearSyncConfig()">清除同步配置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 交易关联弹窗 ===== -->
+<div class="link-overlay" id="link-overlay">
+  <div class="link-overlay-box">
+    <div class="link-overlay-header">
+      <span class="link-overlay-title" id="link-overlay-title">🔗 交易关联</span>
+      <button class="link-overlay-close" onclick="closeLinkOverlay()">&times;</button>
+    </div>
+    <div class="link-overlay-body" id="link-overlay-body">
+      <!-- 动态渲染 -->
+    </div>
+    <div class="link-overlay-footer">
+      <button class="btn btn-secondary" onclick="closeLinkOverlay()">取消</button>
+      <button class="btn btn-primary" id="link-confirm-btn" onclick="confirmLink()">确认关联</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 关联明细弹窗（查看某笔买入的卖出明细） ===== -->
+<div class="link-overlay" id="link-detail-overlay">
+  <div class="link-overlay-box">
+    <div class="link-overlay-header">
+      <span class="link-overlay-title">📋 关联明细</span>
+      <button class="link-overlay-close" onclick="closeLinkDetailOverlay()">&times;</button>
+    </div>
+    <div class="link-overlay-body" id="link-detail-overlay-body">
+      <!-- 动态渲染 -->
+    </div>
+    <div class="link-overlay-footer">
+      <button class="btn btn-secondary" onclick="closeLinkDetailOverlay()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tabs ===== -->
+<div class="tabs-wrapper">
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" onclick="switchTab('buy', this)">💚 买入</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('sell', this)">🟠 卖出</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('records', this)">📋 记录</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('position', this)">📊 持仓</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('pnl', this)">💹 盈亏</button>
+  </div>
+</div>
+
+<!-- ===== Tab: 买入 ===== -->
+<div class="tab-content active" id="tab-buy">
+
+  <!-- 费率设置 -->
+  <div class="card" id="settings-card-buy" style="display:none;">
+    <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('settings-card-buy').style.display='none';">
+      <div class="card-icon settings">⚙️</div>
+      <span class="card-title">费率设置</span>
+      <span style="margin-left:auto; font-size:12px; color:var(--gray-500);">点击折叠</span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">买入费率（%）</span>
+      <input type="number" class="settings-input" id="buy-fee-rate-input"
+             step="0.01" min="0" max="100" value="0"
+             onchange="saveSettings()" />
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">卖出费率（%）</span>
+      <input type="number" class="settings-input" id="sell-fee-rate-input"
+             step="0.01" min="0" max="100" value="0.4"
+             onchange="saveSettings()" />
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">最低手续费（元）</span>
+      <input type="number" class="settings-input" id="min-fee-input"
+             step="0.01" min="0" value="0"
+             onchange="saveSettings()" />
+    </div>
+  </div>
+
+  <!-- 买入表单 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon buy">💚</div>
+      <span class="card-title">新增买入记录</span>
+    </div>
+    <form onsubmit="submitBuy(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="buy-price">买入价格（元/克）<span class="required">*</span></label>
+          <input type="number" id="buy-price" step="0.01" min="0" placeholder="例：485.50"
+                 oninput="calcBuyAmount()" required />
+        </div>
+        <div class="form-group">
+          <label for="buy-weight">买入重量（克）<span class="required">*</span></label>
+          <input type="number" id="buy-weight" step="0.0001" min="0.0001" placeholder="例：5.0000"
+                 oninput="calcBuyAmount()" required />
+          <span class="input-hint">最小 0.01g</span>
+        </div>
+        <div class="form-group">
+          <label for="buy-amount">买入金额（元）</label>
+          <input type="number" id="buy-amount" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="buy-fee">手续费（元）</label>
+          <input type="number" id="buy-fee" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="buy-total">实际支出（元）</label>
+          <input type="number" id="buy-total" readonly placeholder="金额 + 手续费" />
+        </div>
+        <div class="form-group">
+          <label for="buy-date">买入日期<span class="required">*</span></label>
+          <input type="date" id="buy-date" required />
+        </div>
+        <div class="form-group full">
+          <label for="buy-remark">备注</label>
+          <input type="text" id="buy-remark" placeholder="选填，如：定投第1期" maxlength="100" />
+        </div>
+      </div>
+      <div class="section-divider"></div>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn btn-secondary btn-full" id="buy-cancel-edit" onclick="cancelEdit()" style="display:none;">取消编辑</button>
+        <button type="submit" class="btn btn-primary btn-full" id="buy-save-btn">✅ 保存买入记录</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Tab: 卖出 ===== -->
+<div class="tab-content" id="tab-sell">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon sell">🟠</div>
+      <span class="card-title">新增卖出记录</span>
+    </div>
+    <div class="input-hint highlight" id="sell-available-hint" style="margin-bottom:12px; padding: 8px 12px; background: var(--sell-bg); border-radius: var(--radius-sm); font-size:12px;">
+      📦 当前可用持仓：计算中...
+    </div>
+    <form onsubmit="submitSell(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="sell-price">卖出价格（元/克）<span class="required">*</span></label>
+          <input type="number" id="sell-price" step="0.01" min="0" placeholder="例：490.00"
+                 oninput="calcSellAmount()" required />
+        </div>
+        <div class="form-group">
+          <label for="sell-weight">卖出重量（克）<span class="required">*</span></label>
+          <input type="number" id="sell-weight" step="0.0001" min="0.0001" placeholder="例：2.0000"
+                 oninput="calcSellAmount()" required />
+        </div>
+        <div class="form-group">
+          <label for="sell-amount">卖出金额（元）</label>
+          <input type="number" id="sell-amount" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="sell-fee">手续费（元）</label>
+          <input type="number" id="sell-fee" readonly placeholder="自动计算" />
+        </div>
+        <div class="form-group">
+          <label for="sell-net">实际到账（元）</label>
+          <input type="number" id="sell-net" readonly placeholder="金额 - 手续费" />
+        </div>
+        <div class="form-group">
+          <label for="sell-date">卖出日期<span class="required">*</span></label>
+          <input type="date" id="sell-date" required />
+        </div>
+        <div class="form-group full">
+          <label for="sell-remark">备注</label>
+          <input type="text" id="sell-remark" placeholder="选填，如：止盈" maxlength="100" />
+        </div>
+      </div>
+      <div class="section-divider"></div>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn btn-secondary btn-full" id="sell-cancel-edit" onclick="cancelEdit()" style="display:none;">取消编辑</button>
+        <button type="submit" class="btn btn-primary btn-full" id="sell-save-btn">✅ 保存卖出记录</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Tab: 交易记录 ===== -->
+<div class="tab-content" id="tab-records">
+  <div class="card" style="padding: 14px;">
+    <div class="search-bar">
+      <input type="search" id="search-input" placeholder="🔍 搜索类型/日期/价格/备注..."
+             oninput="renderRecords()" />
+      <button class="btn btn-secondary" onclick="document.getElementById('search-input').value=''; renderRecords()">重置</button>
+    </div>
+    <div style="font-size:12px; color:var(--gray-500); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;" id="records-count-row">
+      <span id="records-count">共 0 条记录</span>
+      <button class="btn btn-danger" style="font-size:12px; padding:4px 10px;" onclick="clearAllRecords()">🗑️ 清空全部</button>
+    </div>
+  </div>
+  <div class="records-list" id="records-list">
+    <!-- Records rendered by JS -->
+  </div>
+</div>
+
+<!-- ===== Tab: 持仓分析 ===== -->
+<div class="tab-content" id="tab-position">
+  <!-- 持仓概览 -->
+  <div class="position-highlight">
+    <div style="font-size:12px; color:#A0760E; margin-bottom:6px; font-weight:500;">📦 当前持仓（积存黄金）</div>
+    <div class="position-main">
+      <span class="position-weight" id="pos-weight">0.0000</span>
+      <span class="position-unit">克 (g)</span>
+    </div>
+  <div style="font-size:12px; color:#7B5E0A; margin-top:4px;">
+    加权均价：<strong id="pos-avg-price">-- 元/克</strong>
+  </div>
+  <div id="pos-ultimate-price-info" style="font-size:12px; color:#C62828; margin-top:6px; display:none;">
+    🔥 究极回本价：<strong id="pos-ultimate-price">-- 元/克</strong>
+    <div style="font-size:11px; color:#A0760E; margin-top:2px;" id="pos-ultimate-price-hint"></div>
+  </div>
+  <div id="pos-bonus-info" style="font-size:12px; color:#7B5E0A; margin-top:4px; display:none;">
+    赠金：<strong id="pos-bonus-weight">0.0000 g</strong>
+  </div>
+</div>
+
+  <!-- 持仓统计 -->
+  <div class="stats-grid">
+    <div class="stat-card red">
+      <div class="stat-label">总投入（含手续费）</div>
+      <div class="stat-value" id="pos-total-cost">¥0.00</div>
+      <div class="stat-sub" id="pos-total-cost-sub"></div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">加权均价</div>
+      <div class="stat-value" id="pos-avg-price-card">--</div>
+      <div class="stat-sub">元/克</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">已买入合计</div>
+      <div class="stat-value green" id="pos-buy-weight">0.0000 g</div>
+      <div class="stat-sub" id="pos-buy-amount-sub">¥0.00</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">已卖出合计</div>
+      <div class="stat-value" style="color:var(--sell-text)" id="pos-sell-weight">0.0000 g</div>
+      <div class="stat-sub" id="pos-sell-amount-sub">¥0.00</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #C62828; grid-column: 1 / -1;">
+      <div class="stat-label">🔥 究极回本价</div>
+      <div class="stat-value" id="pos-ultimate-price-card" style="color:#C62828;">--</div>
+      <div class="stat-sub" id="pos-ultimate-price-sub">元/克</div>
+    </div>
+  </div>
+
+  <!-- 浮盈浮亏计算 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon info">💹</div>
+      <span class="card-title">浮盈浮亏计算</span>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label for="current-price-input">当前金价（元/克）</label>
+      <input type="number" id="current-price-input" step="0.01" min="0"
+             placeholder="输入当前金价查看浮盈浮亏"
+             oninput="calcFloatingPnl()" />
+    </div>
+    <div class="pnl-section" id="floating-pnl-section" style="display:none;">
+      <div class="pnl-title">浮盈浮亏明细</div>
+      <div class="pnl-row">
+        <span class="pnl-key">当前金价</span>
+        <span class="pnl-val" id="fpnl-current-price">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">持仓均价</span>
+        <span class="pnl-val" id="fpnl-avg-price">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">持仓克重</span>
+        <span class="pnl-val" id="fpnl-weight">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">持仓市值</span>
+        <span class="pnl-val" id="fpnl-market-value">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">浮盈金额</span>
+        <span class="pnl-val" id="fpnl-amount">--</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">浮盈比例</span>
+        <span class="pnl-val" id="fpnl-ratio">--</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab: 盈亏统计 ===== -->
+<div class="tab-content" id="tab-pnl">
+  <!-- 4 统计卡片 -->
+  <div class="stats-grid">
+    <div class="stat-card red">
+      <div class="stat-label">已实现盈亏</div>
+      <div class="stat-value" id="realized-pnl">¥0.00</div>
+      <div class="stat-sub">基于均价法计算</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">总手续费支出</div>
+      <div class="stat-value" id="total-fee">¥0.00</div>
+      <div class="stat-sub">买入 + 卖出</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">总买入金额</div>
+      <div class="stat-value green" id="total-buy-amount">¥0.00</div>
+      <div class="stat-sub" id="total-buy-weight-sub">0.0000 g</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">总卖出金额</div>
+      <div class="stat-value" style="color:var(--sell-text)" id="total-sell-amount">¥0.00</div>
+      <div class="stat-sub" id="total-sell-weight-sub">0.0000 g</div>
+    </div>
+  </div>
+
+  <!-- 盈亏详情 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon info">📊</div>
+      <span class="card-title">盈亏明细</span>
+    </div>
+    <div class="pnl-section">
+      <div class="pnl-row">
+        <span class="pnl-key">总买入金额（含手续费）</span>
+        <span class="pnl-val" id="detail-total-buy-with-fee">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">总卖出金额（扣手续费）</span>
+        <span class="pnl-val" id="detail-total-sell-net">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">买入手续费合计</span>
+        <span class="pnl-val" id="detail-buy-fee">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">卖出手续费合计</span>
+        <span class="pnl-val" id="detail-sell-fee">¥0.00</span>
+      </div>
+      <div class="pnl-row">
+        <span class="pnl-key">已实现盈亏（均价法）</span>
+        <span class="pnl-val" id="detail-realized-pnl">¥0.00</span>
+      </div>
+    </div>
+    <div style="margin-top: 12px; padding: 10px; background: var(--gray-50); border-radius: var(--radius-sm); font-size: 11px; color: var(--gray-500); line-height: 1.7;">
+      💡 <b>已实现盈亏计算说明：</b><br/>
+      已实现盈亏 = 卖出净收入 - (卖出克重 × 买入均价) - 卖出部分对应的买入手续费<br/>
+      其中：买入均价 = 总买入金额 ÷ 总买入克重（含手续费的综合成本）
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   京东 × 浙商银行积存金记账 — 完整业务逻辑
+   ============================================================ */
+
+// -------------------- 数据存储 --------------------
+const STORAGE_KEY = 'gold_ledger_records';
+const SETTINGS_KEY = 'gold_ledger_settings';
+
+/** @typedef {{ id: string, type: 'buy'|'sell', date: string, price: number, weight: number, amount: number, fee: number, remark: string }} GoldRecord */
+
+/** @type {GoldRecord[]} */
+let records = [];
+let editingId = null; // 当前编辑的记录ID，null=新增模式
+
+/** @type {{ buyFeeRate: number, sellFeeRate: number, minFee: number }} */
+let settings = {
+  buyFeeRate: 0,
+  sellFeeRate: 0.4,
+  minFee: 0,
+};
+
+/** Load data from localStorage */
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    records = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(records)) records = [];
+  } catch (e) {
+    console.error('Load records error:', e);
+    records = [];
+  }
+
+  try {
+    const rawSettings = localStorage.getItem(SETTINGS_KEY);
+    if (rawSettings) {
+      const parsed = JSON.parse(rawSettings);
+      settings = { ...settings, ...parsed };
+    }
+  } catch (e) {
+    console.error('Load settings error:', e);
+  }
+
+  // Sync settings UI
+  const buyRateEl = document.getElementById('buy-fee-rate-input');
+  const sellRateEl = document.getElementById('sell-fee-rate-input');
+  const minFeeEl = document.getElementById('min-fee-input');
+  if (buyRateEl) buyRateEl.value = settings.buyFeeRate;
+  if (sellRateEl) sellRateEl.value = settings.sellFeeRate;
+  if (minFeeEl) minFeeEl.value = settings.minFee;
+
+  updateHeaderSubtitle();
+}
+
+/** Save records to localStorage */
+function saveRecords() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+
+/** Save settings to localStorage */
+function saveSettings() {
+  const buyRateEl = document.getElementById('buy-fee-rate-input');
+  const sellRateEl = document.getElementById('sell-fee-rate-input');
+  const minFeeEl = document.getElementById('min-fee-input');
+
+  settings.buyFeeRate = parseFloat(buyRateEl.value) || 0;
+  settings.sellFeeRate = parseFloat(sellRateEl.value) || 0;
+  settings.minFee = parseFloat(minFeeEl.value) || 0;
+
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  updateHeaderSubtitle();
+  showToast('费率设置已保存', 'success');
+
+  // Re-calculate currently open forms
+  calcBuyAmount();
+  calcSellAmount();
+}
+
+/** Generate a unique ID */
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// -------------------- Fee Calculation --------------------
+/**
+ * Calculate fee based on amount.
+ * @param {number} amount
+ * @param {number} ratePercent
+ * @returns {number}
+ */
+function calcFee(amount, ratePercent) {
+  const fee = amount * (ratePercent / 100);
+  return Math.max(fee, settings.minFee);
+}
+
+// -------------------- Header --------------------
+function updateHeaderSubtitle() {
+  const el = document.getElementById('header-subtitle');
+  if (el) {
+    el.textContent = `买入费率 ${settings.buyFeeRate}% · 卖出费率 ${settings.sellFeeRate}% · 最低手续费 ${settings.minFee}元`;
+  }
+}
+
+// -------------------- Tab Switching --------------------
+/**
+ * @param {string} tabId
+ * @param {HTMLElement} btn
+ */
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+  const content = document.getElementById('tab-' + tabId);
+  if (content) content.classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  // Refresh data for the active tab
+  if (tabId === 'records') renderRecords();
+  if (tabId === 'position') renderPosition();
+  if (tabId === 'pnl') renderPnl();
+  if (tabId === 'sell') updateSellHint();
+}
+
+// -------------------- Buy Form --------------------
+function calcBuyAmount() {
+  const price = parseFloat(document.getElementById('buy-price').value) || 0;
+  const weight = parseFloat(document.getElementById('buy-weight').value) || 0;
+  const amount = price * weight;
+  // 买入价格为0时，手续费强制为0（如红包/赠送）
+  const fee = price === 0 ? 0 : calcFee(amount, settings.buyFeeRate);
+  const total = amount + fee;
+
+  document.getElementById('buy-amount').value = weight > 0 ? amount.toFixed(2) : '';
+  document.getElementById('buy-fee').value = weight > 0 ? fee.toFixed(2) : '';
+  document.getElementById('buy-total').value = weight > 0 ? total.toFixed(2) : '';
+}
+
+function submitBuy(event) {
+  event.preventDefault();
+
+  const price = parseFloat(document.getElementById('buy-price').value);
+  const weight = parseFloat(document.getElementById('buy-weight').value);
+  const date = document.getElementById('buy-date').value;
+  const remark = document.getElementById('buy-remark').value.trim();
+
+  if (isNaN(price) || price < 0) { showToast('请输入有效的买入价格（可以为0）', 'error'); return; }
+  if (price === 0 && !remark) { showToast('买入价格为0时请填写备注（如：红包/赠送）', 'error'); return; }
+
+  // 自动添加赠金标签
+  let finalRemark = remark;
+  if (price === 0 && !remark.includes('[赠金]')) {
+    finalRemark = '[赠金] ' + remark;
+  }
+  if (!weight || weight <= 0) { showToast('请输入有效的买入重量', 'error'); return; }
+  if (weight < 0.0001) { showToast('买入重量不能小于 0.0001g', 'error'); return; }
+  if (!date) { showToast('请选择买入日期', 'error'); return; }
+
+  const amount = price * weight;
+  // 买入价格为0时，手续费强制为0（如红包/赠送）
+  const fee = price === 0 ? 0 : calcFee(amount, settings.buyFeeRate);
+
+  /** @type {GoldRecord} */
+  const record = {
+    id: genId(),
+    type: 'buy',
+    date,
+    price: parseFloat(price.toFixed(2)),
+    weight: parseFloat(weight.toFixed(4)),
+    amount: parseFloat(amount.toFixed(2)),
+    fee: parseFloat(fee.toFixed(2)),
+    remark: finalRemark,
+  };
+
+  // 编辑模式：更新现有记录
+  if (editingId) {
+    const idx = records.findIndex(r => r.id === editingId);
+    if (idx !== -1) {
+      records[idx] = { ...records[idx], ...record, id: editingId };
+    }
+    saveRecords();
+    renderRecords();
+    cancelEdit();
+    showToast(`✅ 买入记录已更新`, 'success');
+    return;
+  }
+
+  records.push(record);
+  saveRecords();
+  renderRecords();
+  renderPosition();
+  renderPnl();
+
+  showToast(`✅ 买入记录已保存：${weight.toFixed(4)}g × ¥${price.toFixed(2)}/g`, 'success');
+  resetBuyForm();
+}
+
+function resetBuyForm() {
+  document.getElementById('buy-price').value = '';
+  document.getElementById('buy-weight').value = '';
+  document.getElementById('buy-amount').value = '';
+  document.getElementById('buy-fee').value = '';
+  document.getElementById('buy-total').value = '';
+  document.getElementById('buy-remark').value = '';
+  document.getElementById('buy-date').value = getTodayStr();
+}
+
+// -------------------- Sell Form --------------------
+function calcSellAmount() {
+  const price = parseFloat(document.getElementById('sell-price').value) || 0;
+  const weight = parseFloat(document.getElementById('sell-weight').value) || 0;
+  const amount = price * weight;
+  const fee = calcFee(amount, settings.sellFeeRate);
+  const net = amount - fee;
+
+  document.getElementById('sell-amount').value = amount > 0 ? amount.toFixed(2) : '';
+  document.getElementById('sell-fee').value = amount > 0 ? fee.toFixed(2) : '';
+  document.getElementById('sell-net').value = amount > 0 ? net.toFixed(2) : '';
+}
+
+function updateSellHint() {
+  const pos = computePosition();
+  const hint = document.getElementById('sell-available-hint');
+  if (hint) {
+    hint.textContent = `📦 当前可用持仓：${pos.currentWeight.toFixed(4)} g（均价 ¥${pos.avgPrice.toFixed(2)}/g）`;
+  }
+}
+
+function submitSell(event) {
+  event.preventDefault();
+
+  const price = parseFloat(document.getElementById('sell-price').value);
+  const weight = parseFloat(document.getElementById('sell-weight').value);
+  const date = document.getElementById('sell-date').value;
+  const remark = document.getElementById('sell-remark').value.trim();
+
+  if (!price || price <= 0) { showToast('请输入有效的卖出价格', 'error'); return; }
+  if (!weight || weight <= 0) { showToast('请输入有效的卖出重量', 'error'); return; }
+  if (weight < 0.0001) { showToast('卖出重量不能小于 0.0001g', 'error'); return; }
+  if (!date) { showToast('请选择卖出日期', 'error'); return; }
+
+  // Validate against current position
+  const pos = computePosition();
+  if (weight > pos.currentWeight + 0.00001) {
+    showToast(`卖出重量超过持仓（可用 ${pos.currentWeight.toFixed(4)}g）`, 'error');
+    return;
+  }
+
+  const amount = price * weight;
+  const fee = calcFee(amount, settings.sellFeeRate);
+
+  /** @type {GoldRecord} */
+  const record = {
+    id: genId(),
+    type: 'sell',
+    date,
+    price: parseFloat(price.toFixed(2)),
+    weight: parseFloat(weight.toFixed(4)),
+    amount: parseFloat(amount.toFixed(2)),
+    fee: parseFloat(fee.toFixed(2)),
+    remark,
+  };
+
+  // 编辑模式：更新现有记录
+  if (editingId) {
+    const idx = records.findIndex(r => r.id === editingId);
+    if (idx !== -1) {
+      records[idx] = { ...records[idx], ...record, id: editingId };
+    }
+    saveRecords();
+    renderRecords();
+    cancelEdit();
+    showToast(`✅ 卖出记录已更新`, 'success');
+    return;
+  }
+
+  records.push(record);
+  saveRecords();
+
+  showToast(`✅ 卖出记录已保存：${weight.toFixed(4)}g × ¥${price.toFixed(2)}/g`, 'success');
+  resetSellForm();
+
+  // 自动跳转到交易记录页，方便查看
+  const recordsTabBtn = document.querySelector('[onclick*="switchTab(\'records\'"]');
+  if (recordsTabBtn) switchTab('records', recordsTabBtn);
+}
+
+function resetSellForm() {
+  document.getElementById('sell-price').value = '';
+  document.getElementById('sell-weight').value = '';
+  document.getElementById('sell-amount').value = '';
+  document.getElementById('sell-fee').value = '';
+  document.getElementById('sell-net').value = '';
+  document.getElementById('sell-remark').value = '';
+  document.getElementById('sell-date').value = getTodayStr();
+}
+
+// -------------------- Records Tab --------------------
+function renderRecords() {
+  const keyword = (document.getElementById('search-input').value || '').trim().toLowerCase();
+
+  let filtered = records.slice().sort((a, b) => {
+    // Sort by date descending, then by id descending
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    return b.id.localeCompare(a.id);
+  });
+
+  if (keyword) {
+    filtered = filtered.filter(r => {
+      const typeLabel = r.type === 'buy' ? '买入' : '卖出';
+      return (r.remark || '').toLowerCase().includes(keyword)
+        || r.date.includes(keyword)
+        || typeLabel.includes(keyword)
+        || r.price.toFixed(2).includes(keyword)
+        || r.weight.toFixed(4).includes(keyword)
+        || r.amount.toFixed(2).includes(keyword)
+        || r.fee.toFixed(2).includes(keyword);
+    });
+  }
+
+  const countEl = document.getElementById('records-count');
+  const listEl = document.getElementById('records-list');
+
+  if (countEl) {
+    countEl.textContent = keyword
+      ? `找到 ${filtered.length} 条（共 ${records.length} 条）`
+      : `共 ${records.length} 条记录`;
+  }
+
+  if (!listEl) return;
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>${keyword ? '没有匹配的记录' : '暂无交易记录，快去添加吧！'}</p>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(r => {
+    const isBuy = r.type === 'buy';
+    const typeLabel = isBuy ? '买入' : '卖出';
+    const badgeClass = isBuy ? 'buy' : 'sell';
+    const feeLabel = '手续费';
+    const netLabel = isBuy ? '实付' : '到账';
+    const net = isBuy ? (r.amount + r.fee) : (r.amount - r.fee);
+
+    // 关联信息（仅卖出）
+    let linkHtml = '';
+    if (!isBuy) {
+      const isLinked = Array.isArray(r.links) && r.links.length > 0;
+      if (isLinked) {
+        // 已关联：显示状态标签 + 修改关联 + 取消关联按钮
+        const totalLinked = r.links.reduce((s, l) => s + l.weight, 0);
+        linkHtml = `
+          <span class="tag tag-linked">已关联(${totalLinked.toFixed(4)}g)</span>
+          <button class="btn btn-sm btn-outline" onclick="openLinkOverlay('${r.id}')" style="margin-left:4px;">修改关联</button>
+          <button class="btn btn-sm btn-danger" onclick="cancelLink('${r.id}')" style="margin-left:4px;">取消关联</button>`;
+      } else {
+        // 检查是否有可用买入
+        const hasAvailable = records.some(rec =>
+          rec.type === 'buy' && getBuyRemainingWeight(rec.id) > 0.0001
+        );
+        if (hasAvailable) {
+          linkHtml = `
+            <span class="tag tag-warn">待关联</span>
+            <button class="btn btn-sm btn-primary" onclick="openLinkOverlay('${r.id}')" style="margin-left:4px;">关联买入</button>`;
+        } else {
+          linkHtml = `
+            <span class="tag" style="background:#f0f0f0;color:#999;">无可用批次</span>
+            <button class="btn btn-sm btn-ghost" disabled style="margin-left:4px;">不可关联</button>`;
+        }
+      }
+    }
+
+    // 买入记录：显示查看关联明细按钮
+    let buyLinkHtml = '';
+    if (isBuy) {
+      const avgPrice = r.weight > 0 ? (r.amount + r.fee) / r.weight : 0;
+      const remaining = getBuyRemainingWeight(r.id);
+      const linkedWeight = r.weight - remaining;
+      // 检查是否有卖出关联到此买入
+      const hasLinks = records.some(rec =>
+        rec.type === 'sell' && Array.isArray(rec.links) && rec.links.some(l => l.buyId === r.id)
+      );
+      if (hasLinks && linkedWeight > 0.0001) {
+        buyLinkHtml = `
+          <span class="tag tag-blue" onclick="openLinkDetailOverlay('${r.id}')" title="点击查看关联卖出">
+            剩余 ${remaining.toFixed(4)}g（共 ${r.weight.toFixed(4)}g）/ 均价 ${avgPrice.toFixed(2)}
+          </span>
+          <button class="btn btn-sm btn-outline" style="margin-left:4px;" onclick="openLinkDetailOverlay('${r.id}')">查看关联</button>`;
+      } else {
+        buyLinkHtml = `
+          <span style="font-size:12px;color:#555;">
+            剩余 ${remaining.toFixed(4)}g / 均价 ${avgPrice.toFixed(2)}
+          </span>`;
+      }
+    }
+
+    return `
+      <div class="record-item">
+        <span class="record-badge ${badgeClass}">${typeLabel}</span>
+        ${isBuy && (r.price === 0 || (r.remark && r.remark.includes('[赠金]'))) ? '<span class="tag tag-bonus" style="margin-left:4px;">🎁 赠金</span>' : ''}
+        <div class="record-body">
+          <div class="record-main">
+            <span class="record-amount">¥${r.amount.toFixed(2)}</span>
+            <span class="record-weight">${r.weight.toFixed(4)}g</span>
+            ${linkHtml}
+            ${buyLinkHtml}
+          </div>
+          <div class="record-meta">
+            <span class="record-meta-item">📅 ${r.date}</span>
+            <span class="record-meta-item">💰 ¥${r.price.toFixed(2)}/g</span>
+            <span class="record-meta-item">${feeLabel} ¥${r.fee.toFixed(2)}</span>
+            <span class="record-meta-item">${netLabel} ¥${net.toFixed(2)}</span>
+          </div>
+          ${r.remark ? `<div class="record-note">💬 ${escapeHtml(r.remark)}</div>` : ''}
+        </div>
+        <div class="record-actions">
+          <button class="btn btn-secondary" onclick="editRecord('${r.id}')">编辑</button>
+          <button class="btn btn-danger" onclick="deleteRecord('${r.id}')">删除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/**
+ * Delete a record by ID.
+ * @param {string} id
+ */
+function deleteRecord(id) {
+  const record = records.find(r => r.id === id);
+  if (!record) return;
+
+  if (!confirm('确认删除这条记录？此操作不可撤销。')) return;
+
+  // 如果删除的是买入记录，清理所有卖出记录中指向此买入的关联
+  if (record.type === 'buy') {
+    records.forEach(r => {
+      if (r.type === 'sell' && Array.isArray(r.links)) {
+        const beforeLen = r.links.length;
+        r.links = r.links.filter(link => link.buyId !== id);
+        // 如果有关联被移除，提示用户
+        if (r.links.length < beforeLen) {
+          // 如果清理后 links 为空，彻底清除
+          if (r.links.length === 0) {
+            r.links = [];
+          }
+        }
+      }
+    });
+  }
+
+  // 如果删除的是卖出记录，直接删除即可（links 随卖出记录一起移除）
+
+  records = records.filter(r => r.id !== id);
+  saveRecords();
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  showToast('记录已删除', 'info');
+}
+
+/**
+ * 清空所有交易记录
+ */
+function clearAllRecords() {
+  if (records.length === 0) {
+    showToast('没有可清空的记录', 'info');
+    return;
+  }
+  if (!confirm(`⚠️ 确认清空全部 ${records.length} 条交易记录？此操作不可撤销！`)) return;
+  if (!confirm('二次确认：所有买入、卖出记录及关联关系将全部删除，真的继续？')) return;
+
+  records = [];
+  saveRecords();
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  updateSellHint();
+  showToast('✅ 已清空全部记录', 'success');
+}
+
+/**
+ * 编辑记录：填充表单并进入编辑模式
+ * @param {string} id
+ */
+function editRecord(id) {
+  const record = records.find(r => r.id === id);
+  if (!record) { showToast('记录不存在', 'error'); return; }
+
+  if (record.type === 'buy') {
+    // 切换到买入Tab
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-buy').classList.add('active');
+    const buyBtn = document.querySelector('[onclick*="switchTab(\'buy\'"]');
+    if (buyBtn) buyBtn.classList.add('active');
+
+    // 填充买入表单
+    document.getElementById('buy-price').value = record.price;
+    document.getElementById('buy-weight').value = record.weight;
+    document.getElementById('buy-date').value = record.date;
+    document.getElementById('buy-remark').value = record.remark || '';
+    calcBuyAmount();
+
+    // 修改按钮文本
+    document.querySelector('#tab-buy .btn-primary').textContent = '✅ 保存修改';
+  } else {
+    // 切换到卖出Tab
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-sell').classList.add('active');
+    const sellBtn = document.querySelector('[onclick*="switchTab(\'sell\'"]');
+    if (sellBtn) sellBtn.classList.add('active');
+
+    // 填充卖出表单
+    document.getElementById('sell-price').value = record.price;
+    document.getElementById('sell-weight').value = record.weight;
+    document.getElementById('sell-date').value = record.date;
+    document.getElementById('sell-remark').value = record.remark || '';
+    calcSellAmount();
+
+    // 修改按钮文本
+    document.querySelector('#tab-sell .btn-primary').textContent = '✅ 保存修改';
+  }
+
+  editingId = id;
+  // 显示取消编辑按钮
+  if (record.type === 'buy') {
+    const btn = document.getElementById('buy-cancel-edit');
+    if (btn) btn.style.display = 'inline-block';
+  } else {
+    const btn = document.getElementById('sell-cancel-edit');
+    if (btn) btn.style.display = 'inline-block';
+  }
+  showToast('正在编辑记录，修改后点击"保存修改"', 'info');
+}
+
+/**
+ * 取消编辑模式
+ */
+function cancelEdit() {
+  editingId = null;
+  // 恢复按钮文本
+  const buyBtn = document.querySelector('#tab-buy .btn-primary');
+  const sellBtn = document.querySelector('#tab-sell .btn-primary');
+  if (buyBtn) buyBtn.textContent = '✅ 保存买入记录';
+  if (sellBtn) sellBtn.textContent = '✅ 保存卖出记录';
+  // 隐藏取消编辑按钮
+  const buyCancel = document.getElementById('buy-cancel-edit');
+  const sellCancel = document.getElementById('sell-cancel-edit');
+  if (buyCancel) buyCancel.style.display = 'none';
+  if (sellCancel) sellCancel.style.display = 'none';
+  // 清空表单
+  resetBuyForm();
+  resetSellForm();
+}
+
+// -------------------- Transaction Link (交易关联) --------------------
+
+/**
+ * 计算某笔买入记录的剩余可关联克重
+ * @param {string} buyId
+ * @returns {number}
+ */
+function getBuyRemainingWeight(buyId) {
+  const buy = records.find(r => r.id === buyId);
+  if (!buy || buy.type !== 'buy') return 0;
+  let linkedWeight = 0;
+  records.forEach(r => {
+    if (r.type === 'sell' && Array.isArray(r.links)) {
+      r.links.forEach(link => {
+        if (link.buyId === buyId) {
+          linkedWeight += link.weight;
+        }
+      });
+    }
+  });
+  return Math.max(0, parseFloat((buy.weight - linkedWeight).toFixed(4)));
+}
+
+/**
+ * 打开交易关联弹窗
+ * @param {string} sellId
+ */
+function openLinkOverlay(sellId) {
+  const sell = records.find(r => r.id === sellId);
+  if (!sell || sell.type !== 'sell') {
+    showToast('找不到该卖出记录', 'error');
+    return;
+  }
+
+  // Store current sellId in a data attribute or global variable
+  window._currentLinkSellId = sellId;
+
+  const overlay = document.getElementById('link-overlay');
+  const title = document.getElementById('link-overlay-title');
+  if (title) {
+    title.textContent = `🔗 交易关联 — ${sell.date} 卖出 ${sell.weight.toFixed(4)}g`;
+  }
+
+  renderLinkOverlayBody(sellId);
+  if (overlay) overlay.classList.add('show');
+}
+
+/**
+ * 渲染关联弹窗内容
+ * @param {string} sellId
+ */
+function renderLinkOverlayBody(sellId) {
+  const sell = records.find(r => r.id === sellId);
+  if (!sell) return;
+
+  const body = document.getElementById('link-overlay-body');
+  if (!body) return;
+
+  // 卖出信息
+  let html = `
+    <div class="link-sell-info">
+      <div class="label">卖出记录</div>
+      <div>
+        <span class="value">${sell.date}</span> ·
+        价格 <span class="value">¥${sell.price.toFixed(2)}/g</span> ·
+        克重 <span class="value">${sell.weight.toFixed(4)}g</span> ·
+        金额 <span class="value">¥${sell.amount.toFixed(2)}</span>
+      </div>
+    </div>`;
+
+  // 找出所有可关联的买入记录（按日期升序，FIFO）
+  const buyRecords = records
+    .filter(r => r.type === 'buy')
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+
+  const availableBuys = buyRecords.filter(b => {
+    // 有剩余可用克重，或已经关联到当前卖出的买入都要显示
+    const remaining = getBuyRemainingWeight(b.id);
+    const alreadyLinkedToThisSell = existingLinks.some(l => l.buyId === b.id);
+    return remaining > 0.0001 || alreadyLinkedToThisSell;
+  });
+
+  if (availableBuys.length === 0) {
+    html += '<div class="link-empty-state">没有可关联的买入记录</div>';
+    body.innerHTML = html;
+    updateLinkSummary();
+    return;
+  }
+
+  // 渲染买入批次列表
+  html += '<div class="link-batch-list" id="link-batch-list">';
+
+  // 如果已有 links，预填
+  const existingLinks = Array.isArray(sell.links) ? sell.links : [];
+
+  availableBuys.forEach(buy => {
+    const remaining = getBuyRemainingWeight(buy.id);
+    const linkedWeight = existingLinks.find(l => l.buyId === buy.id)?.weight || 0;
+
+    html += `
+      <div class="link-batch-item" data-buy-id="${buy.id}">
+        <div class="link-batch-head">
+          <span class="batch-date">${buy.date}</span>
+          <span class="batch-price">买入 ¥${buy.price.toFixed(2)}/g</span>
+          <span class="batch-remaining">可用 ${remaining.toFixed(4)}g</span>
+          ${buy.remark ? `<span style="color:var(--gray-500);">${escapeHtml(buy.remark)}</span>` : ''}
+        </div>
+        <div class="link-batch-input-row">
+          <label>关联克重</label>
+          <input type="number" step="0.0001" min="0" max="${remaining.toFixed(4)}"
+                 value="${linkedWeight > 0 ? linkedWeight.toFixed(4) : ''}"
+                 data-buy-id="${buy.id}"
+                 oninput="onLinkWeightInput('${buy.id}')"
+                 placeholder="0.0000" />
+          <span class="batch-unit">g</span>
+          <button class="btn btn-sm btn-secondary" style="margin-left:4px; padding:2px 8px; font-size:12px;" onclick="fillAllWeight('${buy.id}')">全部</button>
+        </div>
+        <div class="link-profit-row" id="link-profit-${buy.id}"></div>
+      </div>`;
+  });
+
+  html += '</div>';
+
+  // 汇总栏
+  html += `
+    <div class="link-summary-bar" id="link-summary-bar">
+      <span class="summary-allocated" id="link-allocated">已关联 0.0000 / ${sell.weight.toFixed(4)} g</span>
+      <span class="summary-total-profit" id="link-total-profit">盈亏：--</span>
+    </div>`;
+
+  body.innerHTML = html;
+  updateLinkSummary();
+}
+
+/**
+ * 关联弹窗中，某笔买入的关联克重发生变化
+ * @param {string} buyId
+ */
+function onLinkWeightInput(buyId) {
+  updateLinkSummary();
+}
+
+/**
+ * 一键填入某笔买入的全部可用克重
+ * @param {string} buyId
+ */
+function fillAllWeight(buyId) {
+  const sellId = window._currentLinkSellId;
+  if (!sellId) return;
+
+  const sell = records.find(r => r.id === sellId);
+  if (!sell) return;
+
+  const input = document.querySelector(`#link-batch-list input[data-buy-id="${buyId}"]`);
+  if (!input) return;
+
+  // 计算这笔买入的可用克重
+  const remaining = getBuyRemainingWeight(buyId);
+  // 已有关联的克重也要加回来（编辑模式下）
+  const existingLink = Array.isArray(sell.links) ? sell.links.find(l => l.buyId === buyId) : null;
+  const alreadyLinked = existingLink ? existingLink.weight : 0;
+  const maxAvailable = parseFloat((remaining + alreadyLinked).toFixed(4));
+
+  // 计算当前还需要关联多少克重才能匹配卖出总量
+  const inputs = document.querySelectorAll('#link-batch-list input[data-buy-id]');
+  let currentTotal = 0;
+  inputs.forEach(inp => {
+    if (inp.dataset.buyId !== buyId) {
+      currentTotal += parseFloat(inp.value) || 0;
+    }
+  });
+  const stillNeeded = parseFloat((sell.weight - currentTotal).toFixed(4));
+
+  // 取可用克重和还需克重的较小值
+  const fillWeight = Math.min(maxAvailable, stillNeeded);
+  if (fillWeight <= 0) {
+    showToast('无需再填入克重', 'info');
+    return;
+  }
+
+  input.value = fillWeight.toFixed(4);
+  updateLinkSummary();
+}
+
+/**
+ * 更新关联弹窗的汇总信息
+ */
+function updateLinkSummary() {
+  const sellId = window._currentLinkSellId;
+  if (!sellId) return;
+
+  const sell = records.find(r => r.id === sellId);
+  if (!sell) return;
+
+  const inputs = document.querySelectorAll('#link-batch-list input[data-buy-id]');
+  let totalLinked = 0;
+  let totalProfit = 0;
+  const sellNetPrice = sell.price; // 卖出价格（浙商卖出无手续费？实际有0.4%手续费，但这里用卖出均价）
+
+  // 计算卖出净额（扣除手续费）
+  const sellNetAmount = sell.amount - sell.fee;
+  const sellNetPricePerGram = sell.weight > 0 ? sellNetAmount / sell.weight : 0;
+
+  inputs.forEach(input => {
+    const buyId = input.dataset.buyId;
+    const weight = parseFloat(input.value) || 0;
+    if (weight <= 0) {
+      const profitEl = document.getElementById('link-profit-' + buyId);
+      if (profitEl) profitEl.textContent = '';
+      return;
+    }
+
+    totalLinked += weight;
+
+    const buy = records.find(r => r.id === buyId);
+    if (!buy) return;
+
+    // 买入成本价（含手续费，浙商买入无手续费所以就是 price）
+    const buyCostPrice = buy.price;
+
+    // 本笔盈亏 = (卖出净价 - 买入成本价) × 关联克重
+    const profit = (sellNetPricePerGram - buyCostPrice) * weight;
+    totalProfit += profit;
+
+    const profitEl = document.getElementById('link-profit-' + buyId);
+    if (profitEl) {
+      profitEl.innerHTML = `本笔盈亏：<span class="${profit >= 0 ? 'profit-pos' : 'profit-neg'}" style="font-weight:600;">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}</span>`;
+    }
+
+    // 校验不超过可用克重
+    const remaining = getBuyRemainingWeight(buyId);
+    const existingLink = Array.isArray(sell.links) ? sell.links.find(l => l.buyId === buyId) : null;
+    const alreadyLinked = existingLink ? existingLink.weight : 0;
+    const maxAllowed = parseFloat((remaining + alreadyLinked).toFixed(4));
+
+    if (weight > maxAllowed + 0.0001) {
+      input.style.borderColor = 'var(--jd-red)';
+      const profitEl2 = document.getElementById('link-profit-' + buyId);
+      if (profitEl2) profitEl2.innerHTML = `<span style="color:var(--jd-red);">超出可用克重（最多 ${maxAllowed.toFixed(4)}g）</span>`;
+    } else {
+      input.style.borderColor = '';
+    }
+  });
+
+  // 更新汇总
+  const allocatedEl = document.getElementById('link-allocated');
+  const profitEl = document.getElementById('link-total-profit');
+  const confirmBtn = document.getElementById('link-confirm-btn');
+
+  if (allocatedEl) {
+    allocatedEl.textContent = `已关联 ${totalLinked.toFixed(4)} / ${sell.weight.toFixed(4)} g`;
+    if (totalLinked > sell.weight + 0.0001) {
+      allocatedEl.innerHTML += ` <span style="color:var(--jd-red);">（超出 ${(totalLinked - sell.weight).toFixed(4)}g）</span>`;
+    }
+  }
+
+  if (profitEl) {
+    profitEl.textContent = `预估盈亏：${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)}`;
+    profitEl.className = `summary-total-profit ${totalProfit >= 0 ? 'profit-pos' : 'profit-neg'}`;
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = Math.abs(totalLinked - sell.weight) > 0.0001;
+    confirmBtn.title = confirmBtn.disabled ? '关联克重必须等于卖出克重' : '';
+  }
+}
+
+/**
+ * 确认关联
+ */
+function confirmLink() {
+  const sellId = window._currentLinkSellId;
+  if (!sellId) return;
+
+  const sell = records.find(r => r.id === sellId);
+  if (!sell) return;
+
+  const inputs = document.querySelectorAll('#link-batch-list input[data-buy-id]');
+  const links = [];
+  let totalLinked = 0;
+
+  inputs.forEach(input => {
+    const buyId = input.dataset.buyId;
+    const weight = parseFloat(input.value) || 0;
+    if (weight <= 0) return;
+
+    const buy = records.find(r => r.id === buyId);
+    if (!buy) return;
+
+    links.push({
+      buyId: buyId,
+      buyPrice: buy.price,
+      buyDate: buy.date,
+      weight: parseFloat(weight.toFixed(4)),
+    });
+    totalLinked += weight;
+  });
+
+  if (Math.abs(totalLinked - sell.weight) > 0.0001) {
+    showToast(`关联克重（${totalLinked.toFixed(4)}g）不等于卖出克重（${sell.weight.toFixed(4)}g）`, 'error');
+    return;
+  }
+
+  // 保存 links 到卖出记录
+  sell.links = links;
+  saveRecords();
+
+  closeLinkOverlay();
+  renderRecords();
+  renderPnl();
+  showToast('✅ 关联成功', 'success');
+}
+
+/**
+ * 取消关联
+ * @param {string} sellId
+ */
+function cancelLink(sellId) {
+  if (!confirm('取消关联后将无法恢复，确认继续？')) return;
+
+  const sell = records.find(r => r.id === sellId);
+  if (!sell) return;
+
+  sell.links = [];
+  saveRecords();
+
+  closeLinkOverlay();
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  showToast('已取消关联', 'info');
+}
+
+/**
+ * 关闭关联弹窗
+ */
+function closeLinkOverlay() {
+  const overlay = document.getElementById('link-overlay');
+  if (overlay) overlay.classList.remove('show');
+  window._currentLinkSellId = null;
+}
+
+/**
+ * 打开某笔买入的关联明细弹窗
+ * @param {string} buyId
+ */
+function openLinkDetailOverlay(buyId) {
+  const buy = records.find(r => r.id === buyId);
+  if (!buy || buy.type !== 'buy') return;
+
+  const overlay = document.getElementById('link-detail-overlay');
+  const body = document.getElementById('link-detail-overlay-body');
+  if (!overlay || !body) return;
+
+  // 找出所有关联到此买入的卖出记录
+  const linkedSells = [];
+  records.forEach(r => {
+    if (r.type === 'sell' && Array.isArray(r.links)) {
+      r.links.forEach(link => {
+        if (link.buyId === buyId) {
+          linkedSells.push({ sell: r, weight: link.weight });
+        }
+      });
+    }
+  });
+
+  let html = `
+    <div class="link-sell-info">
+      <div class="label">买入记录</div>
+      <div>
+        ${buy.date} ·
+        价格 <span class="value">¥${buy.price.toFixed(2)}/g</span> ·
+        克重 <span class="value">${buy.weight.toFixed(4)}g</span>
+        ${buy.remark ? `· ${escapeHtml(buy.remark)}` : ''}
+      </div>
+    </div>`;
+
+  if (linkedSells.length === 0) {
+    html += '<div class="link-empty-state">此买入记录尚未关联任何卖出</div>';
+  } else {
+    let totalLinkedWeight = 0;
+    let totalProfit = 0;
+
+    linkedSells.forEach(ls => {
+      const sell = ls.sell;
+      const weight = ls.weight;
+      const buyCostPrice = buy.price;
+      const sellNetAmount = sell.amount - sell.fee;
+      const sellNetPrice = sell.weight > 0 ? sellNetAmount / sell.weight : 0;
+      const profit = (sellNetPrice - buyCostPrice) * weight;
+      totalLinkedWeight += weight;
+      totalProfit += profit;
+
+      html += `
+        <div class="link-batch-item" style="margin-bottom:10px;">
+          <div class="link-batch-head">
+            <span class="batch-date">${sell.date} 卖出</span>
+            <span class="batch-price">价格 ¥${sell.price.toFixed(2)}/g</span>
+            <span class="batch-remaining">关联 ${weight.toFixed(4)}g</span>
+          </div>
+          <div class="link-profit-row">
+            本笔盈亏：<span class="${profit >= 0 ? 'profit-pos' : 'profit-neg'}" style="font-weight:600;">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}</span>
+          </div>
+        </div>`;
+    });
+
+    html += `
+      <div class="link-summary-bar">
+        <span>总关联：${totalLinkedWeight.toFixed(4)}g</span>
+        <span class="summary-total-profit ${totalProfit >= 0 ? 'profit-pos' : 'profit-neg'}">
+          总盈亏：${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)}
+        </span>
+      </div>`;
+  }
+
+  body.innerHTML = html;
+  overlay.classList.add('show');
+}
+
+/**
+ * 关闭关联明细弹窗
+ */
+function closeLinkDetailOverlay() {
+  const overlay = document.getElementById('link-detail-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+/**
+ * 计算某笔卖出记录的盈亏（基于关联）
+ * @param {object} sellRecord
+ * @returns {{ profit: number, profitRatio: number, linked: boolean }}
+ */
+function calcSellRecordPnl(sellRecord) {
+  if (!sellRecord || sellRecord.type !== 'sell') return { profit: 0, profitRatio: 0, linked: false };
+
+  if (Array.isArray(sellRecord.links) && sellRecord.links.length > 0) {
+    // 有关联：精确计算
+    let totalProfit = 0;
+    const sellNetAmount = sellRecord.amount - sellRecord.fee;
+    const sellNetPricePerGram = sellRecord.weight > 0 ? sellNetAmount / sellRecord.weight : 0;
+
+    sellRecord.links.forEach(link => {
+      const buy = records.find(r => r.id === link.buyId);
+      const buyCostPrice = buy ? buy.price : link.buyPrice || 0;
+      totalProfit += (sellNetPricePerGram - buyCostPrice) * link.weight;
+    });
+
+    return {
+      profit: parseFloat(totalProfit.toFixed(2)),
+      profitRatio: 0, // 单笔卖出不一定有成本比例
+      linked: true,
+    };
+  } else {
+    // 无关联：用加权均价估算
+    const pos = computePosition();
+    // 注意：这里的均价是当前的，不是卖出时的。仅做参考
+    const avgPrice = pos.totalBuyWeight > 0
+      ? (pos.totalBuyAmount + pos.buyFeeTotal) / pos.totalBuyWeight
+      : 0;
+    const profit = (sellNetPricePerGram - avgPrice) * sellRecord.weight;
+    return {
+      profit: parseFloat(profit.toFixed(2)),
+      profitRatio: avgPrice > 0 ? (profit / (avgPrice * sellRecord.weight)) * 100 : 0,
+      linked: false,
+    };
+  }
+}
+
+// -------------------- Position --------------------
+/**
+ * Compute current position data.
+ * @returns {{ currentWeight: number, totalBuyWeight: number, totalSellWeight: number, avgPrice: number, totalCost: number, totalBuyAmount: number, totalSellAmount: number, buyFeeTotal: number, sellFeeTotal: number }}
+ */
+function computePosition() {
+  let totalBuyWeight = 0;
+  let totalBuyAmount = 0;  // sum of (price × weight)
+  let totalBuyFee = 0;
+  let totalSellWeight = 0;
+  let totalSellAmount = 0;
+  let totalSellFee = 0;
+  let totalBonusWeight = 0;  // 赠金总重量（买入价格为0）
+
+  records.forEach(r => {
+    if (r.type === 'buy') {
+      totalBuyWeight += r.weight;
+      totalBuyAmount += r.amount;
+      totalBuyFee += r.fee;
+      // 计算赠金重量（买入价格为0）
+      if (r.price === 0) {
+        totalBonusWeight += r.weight;
+      }
+    } else if (r.type === 'sell') {
+      totalSellWeight += r.weight;
+      totalSellAmount += r.amount;
+      totalSellFee += r.fee;
+    }
+  });
+
+  const currentWeight = totalBuyWeight - totalSellWeight;
+
+  // 计算剩余持仓的均价（只考虑还没卖出的部分）
+  let remainingCost = 0;    // 剩余持仓的总成本（含手续费）
+  let remainingWeight = 0;  // 剩余持仓的总克重
+  let bonusRemainingWeight = 0;  // 剩余赠金重量
+
+  records.filter(r => r.type === 'buy').forEach(buy => {
+    const remaining = getBuyRemainingWeight(buy.id);
+    if (remaining > 0.0001) {
+      // 本笔买入的每克成本（含手续费）
+      const costPerGram = (buy.amount + buy.fee) / buy.weight;
+      remainingCost += remaining * costPerGram;
+      remainingWeight += remaining;
+      // 计算剩余赠金重量
+      if (buy.price === 0) {
+        bonusRemainingWeight += remaining;
+      }
+    }
+  });
+
+  // 剩余持仓均价 = 剩余持仓总成本 / 剩余持仓总克重
+  const avgPrice = remainingWeight > 0 ? remainingCost / remainingWeight : 0;
+
+  return {
+    currentWeight: Math.max(currentWeight, 0),
+    totalBuyWeight,
+    totalSellWeight,
+    avgPrice,  // 剩余持仓均价（不含已卖出部分）
+    totalCost: remainingCost,
+    totalBuyAmount,
+    totalSellAmount,
+    buyFeeTotal: totalBuyFee,
+    sellFeeTotal: totalSellFee,
+    totalCostWithFee: totalBuyAmount + totalBuyFee,
+    bonusWeight: totalBonusWeight,  // 赠金总重量（含已卖出）
+    bonusRemainingWeight,  // 剩余赠金重量
+  };
+}
+
+function renderPosition() {
+  const pos = computePosition();
+
+  safeSetText('pos-weight', pos.currentWeight.toFixed(4));
+  safeSetText('pos-avg-price', pos.avgPrice > 0 ? `¥${pos.avgPrice.toFixed(2)}/克` : '-- 元/克');
+  safeSetText('pos-total-cost', `¥${pos.totalCost.toFixed(2)}`);
+  safeSetText('pos-total-cost-sub', `均价 ¥${pos.avgPrice.toFixed(2)}/g`);
+  safeSetText('pos-avg-price-card', pos.avgPrice > 0 ? `¥${pos.avgPrice.toFixed(2)}` : '--');
+  safeSetText('pos-buy-weight', `${pos.totalBuyWeight.toFixed(4)} g`);
+  safeSetText('pos-buy-amount-sub', `¥${pos.totalBuyAmount.toFixed(2)}`);
+  safeSetText('pos-sell-weight', `${pos.totalSellWeight.toFixed(4)} g`);
+  safeSetText('pos-sell-amount-sub', `¥${pos.totalSellAmount.toFixed(2)}`);
+
+  // 显示赠金数量
+  safeSetText('pos-bonus-weight', `${pos.bonusRemainingWeight.toFixed(4)} g`);
+  const bonusEl = document.getElementById('pos-bonus-info');
+  if (bonusEl) {
+    bonusEl.style.display = pos.bonusRemainingWeight > 0.0001 ? 'block' : 'none';
+  }
+
+  // ===== 究极回本价计算 =====
+  // 究极回本价 = (持仓克重成本 - 已实现盈亏) / 持仓克重
+  // 含义：已实现的利润可以抵扣持仓成本，算出"真正回本"的价格
+  let realizedPnl = 0;
+
+  // 优先使用关联方式计算已实现盈亏（更精确）
+  const hasAnyLinks = records.some(r => r.type === 'sell' && Array.isArray(r.links) && r.links.length > 0);
+  if (hasAnyLinks) {
+    // 基于关联计算：逐笔卖出累加盈亏
+    records.forEach(r => {
+      if (r.type !== 'sell' || !Array.isArray(r.links) || r.links.length === 0) return;
+      const sellNetAmount = r.amount - r.fee;
+      const sellNetPricePerGram = r.weight > 0 ? sellNetAmount / r.weight : 0;
+      r.links.forEach(link => {
+        const buy = records.find(b => b.id === link.buyId);
+        const buyCostPrice = buy ? buy.price : link.buyPrice || 0;
+        realizedPnl += (sellNetPricePerGram - buyCostPrice) * link.weight;
+      });
+    });
+  } else {
+    // 无关联时回退到均价法
+    const avgBuyPriceExclFee = pos.totalBuyWeight > 0 ? pos.totalBuyAmount / pos.totalBuyWeight : 0;
+    const costOfSoldExclFee = pos.totalSellWeight * avgBuyPriceExclFee;
+    const proportionalBuyFee = pos.totalBuyWeight > 0 ? (pos.totalSellWeight / pos.totalBuyWeight) * pos.buyFeeTotal : 0;
+    const sellNetRevenue = pos.totalSellAmount - pos.sellFeeTotal;
+    realizedPnl = sellNetRevenue - costOfSoldExclFee - proportionalBuyFee;
+  }
+
+  const ultimatePriceEl1 = document.getElementById('pos-ultimate-price');
+  const ultimateInfoEl = document.getElementById('pos-ultimate-price-info');
+  const ultimateHintEl = document.getElementById('pos-ultimate-price-hint');
+  const ultimatePriceCardEl = document.getElementById('pos-ultimate-price-card');
+  const ultimatePriceSubEl = document.getElementById('pos-ultimate-price-sub');
+
+  if (pos.currentWeight > 0.0001) {
+    const ultimatePrice = (pos.totalCost - realizedPnl) / pos.currentWeight;
+    const displayPrice = ultimatePrice > 0 ? `¥${ultimatePrice.toFixed(2)}/克` : '¥0.00/克（已全回本 🎉）';
+
+    if (ultimatePriceEl1) ultimatePriceEl1.textContent = displayPrice;
+    if (ultimateInfoEl) ultimateInfoEl.style.display = 'block';
+    if (ultimatePriceCardEl) ultimatePriceCardEl.textContent = ultimatePrice > 0 ? `¥${ultimatePrice.toFixed(2)}` : '已回本 🎉';
+
+    const pnlSign = realizedPnl >= 0 ? '+' : '';
+    const hint = `(¥${pos.totalCost.toFixed(2)} - ${pnlSign}¥${realizedPnl.toFixed(2)}) / ${pos.currentWeight.toFixed(4)}g`;
+    if (ultimateHintEl) ultimateHintEl.textContent = hint;
+    if (ultimatePriceSubEl) ultimatePriceSubEl.textContent = ultimatePrice <= 0 ? '已全部回本！' : `已实现盈亏 ${pnlSign}¥${realizedPnl.toFixed(2)}`;
+  } else {
+    if (ultimateInfoEl) ultimateInfoEl.style.display = 'none';
+    if (ultimatePriceCardEl) ultimatePriceCardEl.textContent = '--';
+    if (ultimatePriceSubEl) ultimatePriceSubEl.textContent = '无持仓';
+  }
+
+  // Reset pnl section
+  const pnlSection = document.getElementById('floating-pnl-section');
+  if (pnlSection) pnlSection.style.display = 'none';
+
+  // Keep current price input and recalc if filled
+  const priceInput = document.getElementById('current-price-input');
+  if (priceInput && priceInput.value) {
+    calcFloatingPnl();
+  }
+
+  updateSellHint();
+}
+
+function calcFloatingPnl() {
+  const currentPrice = parseFloat(document.getElementById('current-price-input').value) || 0;
+  const pnlSection = document.getElementById('floating-pnl-section');
+
+  if (!currentPrice || currentPrice <= 0) {
+    if (pnlSection) pnlSection.style.display = 'none';
+    return;
+  }
+
+  if (pnlSection) pnlSection.style.display = 'block';
+
+  const pos = computePosition();
+  const marketValue = currentPrice * pos.currentWeight;
+  const pnlAmount = (currentPrice - pos.avgPrice) * pos.currentWeight;
+  const pnlRatio = pos.totalCost > 0 ? (pnlAmount / pos.totalCost) * 100 : 0;
+  const isPositive = pnlAmount >= 0;
+
+  safeSetText('fpnl-current-price', `¥${currentPrice.toFixed(2)}/g`);
+  safeSetText('fpnl-avg-price', `¥${pos.avgPrice.toFixed(2)}/g`);
+  safeSetText('fpnl-weight', `${pos.currentWeight.toFixed(4)} g`);
+  safeSetText('fpnl-market-value', `¥${marketValue.toFixed(2)}`);
+
+  const pnlAmountEl = document.getElementById('fpnl-amount');
+  const pnlRatioEl = document.getElementById('fpnl-ratio');
+
+  if (pnlAmountEl) {
+    pnlAmountEl.textContent = `${isPositive ? '+' : ''}¥${pnlAmount.toFixed(2)}`;
+    pnlAmountEl.className = `pnl-val ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+  if (pnlRatioEl) {
+    pnlRatioEl.textContent = `${isPositive ? '+' : ''}${pnlRatio.toFixed(2)}%`;
+    pnlRatioEl.className = `pnl-val ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+}
+
+// -------------------- PnL Tab --------------------
+function renderPnl() {
+  const pos = computePosition();
+
+  // Realized PnL (simplified average cost method):
+  // realizedPnl = sellNetRevenue - (sellWeight * avgCostPerGram) - proportional buy fee
+  // avgCostPerGram (with fee) = (totalBuyAmount + totalBuyFee) / totalBuyWeight
+  // proportional buy fee for sold = (sellWeight / totalBuyWeight) * totalBuyFee
+  const avgCostPerGram = pos.totalBuyWeight > 0
+    ? (pos.totalBuyAmount + pos.buyFeeTotal) / pos.totalBuyWeight
+    : 0;
+
+  const proportionalBuyFee = pos.totalBuyWeight > 0
+    ? (pos.totalSellWeight / pos.totalBuyWeight) * pos.buyFeeTotal
+    : 0;
+
+  const sellNetRevenue = pos.totalSellAmount - pos.sellFeeTotal;
+  const costOfSold = pos.totalSellWeight * avgCostPerGram;
+  const realizedPnl = sellNetRevenue - costOfSold + proportionalBuyFee
+    // Simplified: realized = sellNet - (sellWeight * avgCostExclFee) - proportional buy fee
+    // More accurate: realized = sellNet - sellWeight * (totalBuyAmount/totalBuyWeight) - proportional buy fee
+    ;
+
+  // Corrected formula:
+  const avgBuyPriceExclFee = pos.totalBuyWeight > 0 ? pos.totalBuyAmount / pos.totalBuyWeight : 0;
+  const costOfSoldExclFee = pos.totalSellWeight * avgBuyPriceExclFee;
+  const realizedPnlFinal = sellNetRevenue - costOfSoldExclFee - proportionalBuyFee;
+
+  const totalFee = pos.buyFeeTotal + pos.sellFeeTotal;
+
+  const isPositive = realizedPnlFinal >= 0;
+
+  const realizedEl = document.getElementById('realized-pnl');
+  if (realizedEl) {
+    realizedEl.textContent = `${isPositive ? '+' : ''}¥${realizedPnlFinal.toFixed(2)}`;
+    realizedEl.className = `stat-value ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+
+  const detailEl = document.getElementById('detail-realized-pnl');
+  if (detailEl) {
+    detailEl.textContent = `${isPositive ? '+' : ''}¥${realizedPnlFinal.toFixed(2)}`;
+    detailEl.className = `pnl-val ${isPositive ? 'profit-pos' : 'profit-neg'}`;
+  }
+
+  safeSetText('total-fee', `¥${totalFee.toFixed(2)}`);
+  safeSetText('total-buy-amount', `¥${pos.totalBuyAmount.toFixed(2)}`);
+  safeSetText('total-buy-weight-sub', `${pos.totalBuyWeight.toFixed(4)} g`);
+  safeSetText('total-sell-amount', `¥${pos.totalSellAmount.toFixed(2)}`);
+  safeSetText('total-sell-weight-sub', `${pos.totalSellWeight.toFixed(4)} g`);
+
+  safeSetText('detail-total-buy-with-fee', `¥${(pos.totalBuyAmount + pos.buyFeeTotal).toFixed(2)}`);
+  safeSetText('detail-total-sell-net', `¥${(pos.totalSellAmount - pos.sellFeeTotal).toFixed(2)}`);
+  safeSetText('detail-buy-fee', `¥${pos.buyFeeTotal.toFixed(2)}`);
+  safeSetText('detail-sell-fee', `¥${pos.sellFeeTotal.toFixed(2)}`);
+}
+
+// -------------------- Export / Import --------------------
+function exportData() {
+  const payload = {
+    version: '1.0',
+    exportTime: new Date().toISOString(),
+    settings,
+    records,
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gold-ledger-${dateStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ 数据已导出', 'success');
+}
+
+document.getElementById('import-input').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    try {
+      const payload = JSON.parse(ev.target.result);
+      if (!Array.isArray(payload.records)) {
+        showToast('文件格式错误，无法导入', 'error');
+        return;
+      }
+      if (!confirm(`导入将替换当前所有数据（${payload.records.length} 条记录）。确认继续？`)) {
+        return;
+      }
+      records = payload.records;
+      if (payload.settings) {
+        settings = { ...settings, ...payload.settings };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      }
+      saveRecords();
+      loadData();
+      renderRecords();
+      showToast(`✅ 导入成功：${records.length} 条记录`, 'success');
+    } catch (err) {
+      showToast('解析文件失败，请检查格式', 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  // Reset input
+  this.value = '';
+});
+
+// -------------------- Toast --------------------
+/**
+ * Show a toast notification.
+ * @param {string} message
+ * @param {'success'|'error'|'info'} [type]
+ * @param {number} [duration]
+ */
+function showToast(message, type = '', duration = 2800) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast${type ? ' ' + type : ''}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = 'toastOut 0.3s ease forwards';
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 320);
+  }, duration);
+}
+
+// -------------------- Utilities --------------------
+/**
+ * Get today's date string in YYYY-MM-DD format.
+ * @returns {string}
+ */
+function getTodayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Get date string for filename.
+ * @returns {string}
+ */
+function dateStr() {
+  return getTodayStr().replace(/-/g, '');
+}
+
+/**
+ * Safely set text content of element by id.
+ * @param {string} id
+ * @param {string} text
+ */
+function safeSetText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+/**
+ * Escape HTML special characters.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ------------------- GitHub Gist Sync --------------------
+const SYNC_CONFIG_KEY = 'gold_ledger_sync_config';
+
+/** Open sync settings modal */
+function openSyncModal() {
+  const modal = document.getElementById('sync-modal');
+  if (modal) modal.classList.add('show');
+  loadSyncConfigUI();
+}
+
+/** Close sync settings modal */
+function closeSyncModal() {
+  const modal = document.getElementById('sync-modal');
+  if (modal) modal.classList.remove('show');
+}
+
+/** Load saved token/gist_id from localStorage into UI */
+function loadSyncConfigUI() {
+  const cfg = getSyncConfig();
+  const tokenEl = document.getElementById('github-token-input');
+  const gistEl = document.getElementById('gist-id-input');
+  if (tokenEl) tokenEl.value = cfg.token || '';
+  if (gistEl) gistEl.value = cfg.gistId || '';
+  setSyncStatus(cfg.gistId ? 'idle' : 'idle', cfg.gistId ? '已配置，可同步' : '请先配置 Token 并同步');
+}
+
+/** Get sync config from localStorage */
+function getSyncConfig() {
+  try {
+    const raw = localStorage.getItem(SYNC_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+
+/** Save sync config to localStorage */
+function saveSyncConfig(token, gistId) {
+  const cfg = { token: token || '', gistId: gistId || '' };
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
+}
+
+/** Clear sync config */
+function clearSyncConfig() {
+  if (!confirm('清除同步配置？本地数据不受影响。')) return;
+  localStorage.removeItem(SYNC_CONFIG_KEY);
+  loadSyncConfigUI();
+  showToast('同步配置已清除', 'info');
+}
+
+/** Update sync status in modal */
+function setSyncStatus(type, message) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.className = 'sync-status ' + type;
+  el.textContent = message;
+}
+
+/** Push local data to Gist */
+async function syncPush() {
+  const tokenEl = document.getElementById('github-token-input');
+  const gistEl = document.getElementById('gist-id-input');
+  const token = (tokenEl?.value || '').trim();
+  const existingGistId = (gistEl?.value || '').trim();
+
+  if (!token) { showToast('请输入 GitHub Token', 'error'); return; }
+
+  setSyncStatus('syncing', '⏳ 正在上传到 GitHub Gist...');
+  showToast('正在上传到云端...', 'info', 1500);
+
+  const payload = {
+    version: '1.0',
+    exportTime: new Date().toISOString(),
+    settings,
+    records,
+  };
+  const content = JSON.stringify(payload, null, 2);
+
+  try {
+    let gistId = existingGistId;
+    let url, method, body;
+
+    if (!gistId) {
+      // Create new Gist
+      url = 'https://api.github.com/gists';
+      method = 'POST';
+      body = JSON.stringify({
+        public: false,
+        description: '京东浙商银行积存金记账数据（请勿手动修改）',
+        files: { 'gold-ledger.json': { content } },
+      });
+    } else {
+      // Update existing Gist
+      url = `https://api.github.com/gists/${gistId}`;
+      method = 'PATCH';
+      body = JSON.stringify({
+        files: { 'gold-ledger.json': { content } },
+      });
+    }
+
+    const resp = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+      },
+      body,
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`GitHub API ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const data = await resp.json();
+    gistId = data.id;
+
+    // Save config
+    saveSyncConfig(token, gistId);
+    if (gistEl) gistEl.value = gistId;
+
+    setSyncStatus('done', `✅ 上传成功！Gist ID: ${gistId.slice(0, 12)}...`);
+    showToast('☁️ 已上传到云端', 'success');
+  } catch (err) {
+    console.error('Sync push error:', err);
+    setSyncStatus('error', `❌ 上传失败：${err.message.slice(0, 100)}`);
+    showToast('上传失败，请检查 Token 和网络', 'error');
+  }
+}
+
+/** Pull data from Gist to local */
+async function syncPull() {
+  const tokenEl = document.getElementById('github-token-input');
+  const gistEl = document.getElementById('gist-id-input');
+  const token = (tokenEl?.value || '').trim();
+  const gistId = (gistEl?.value || '').trim();
+
+  if (!token) { showToast('请输入 GitHub Token', 'error'); return; }
+  if (!gistId) { showToast('请先上传一次以获取 Gist ID', 'error'); return; }
+
+  setSyncStatus('syncing', '⏳ 正在从 GitHub Gist 拉取数据...');
+  showToast('正在从云端拉取...', 'info', 1500);
+
+  try {
+    const headers = {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+    };
+    const resp = await fetch(`https://api.github.com/gists/${gistId}`, { headers });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`GitHub API ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const data = await resp.json();
+    const file = data.files?.['gold-ledger.json'];
+    if (!file?.content) throw new Error('Gist 中未找到 gold-ledger.json 文件');
+
+    const payload = JSON.parse(file.content);
+    if (!Array.isArray(payload.records)) throw new Error('数据格式错误');
+
+    if (!confirm(`将从云端拉取 ${payload.records.length} 条记录，替换当前本地数据。确认继续？`)) return;
+
+    records = payload.records;
+    if (payload.settings) {
+      settings = { ...settings, ...payload.settings };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      // Sync UI
+      const b = document.getElementById('buy-fee-rate-input');
+      const s = document.getElementById('sell-fee-rate-input');
+      const m = document.getElementById('min-fee-input');
+      if (b) b.value = settings.buyFeeRate;
+      if (s) s.value = settings.sellFeeRate;
+      if (m) m.value = settings.minFee;
+      updateHeaderSubtitle();
+    }
+    saveRecords();
+    loadData();
+    renderRecords();
+    renderPosition();
+    renderPnl();
+
+    setSyncStatus('done', `✅ 拉取成功！共 ${records.length} 条记录`);
+    showToast(`☁️ 已从云端拉取 ${records.length} 条记录`, 'success');
+  } catch (err) {
+    console.error('Sync pull error:', err);
+    setSyncStatus('error', `❌ 拉取失败：${err.message.slice(0, 100)}`);
+    showToast('拉取失败，请检查 Token 和 Gist ID', 'error');
+  }
+}
+
+// ------------------- Initialization --------------------
+function init() {
+  loadData();
+
+  // Set default dates
+  const today = getTodayStr();
+  const buyDateEl = document.getElementById('buy-date');
+  const sellDateEl = document.getElementById('sell-date');
+  if (buyDateEl) buyDateEl.value = today;
+  if (sellDateEl) sellDateEl.value = today;
+
+  // Initial render
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  updateSellHint();
+
+  // Silent auto-pull from Gist (if configured)
+  const cfg = getSyncConfig();
+  if (cfg.token && cfg.gistId) {
+    silentPull(cfg);
+  }
+}
+
+/** Silent pull: no toasts, no UI disruption, just update data */
+async function silentPull(cfg) {
+  try {
+    const headers = {
+      'Authorization': `token ${cfg.token}`,
+      'Accept': 'application/vnd.github.v3+json',
+    };
+    const resp = await fetch(`https://api.github.com/gists/${cfg.gistId}`, { headers });
+    if (!resp.ok) return; // silently fail
+    const data = await resp.json();
+    const file = data.files?.['gold-ledger.json'];
+    if (!file?.content) return;
+    const payload = JSON.parse(file.content);
+    if (!Array.isArray(payload.records)) return;
+
+    // Only update if remote has more records (simple heuristic)
+    if (payload.records.length > records.length) {
+      records = payload.records;
+      if (payload.settings) {
+        settings = { ...settings, ...payload.settings };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      }
+      saveRecords();
+      // Re-render UI
+      renderRecords();
+      renderPosition();
+      renderPnl();
+      updateSellHint();
+      // Update settings UI if modal is open
+      const b = document.getElementById('buy-fee-rate-input');
+      const s = document.getElementById('sell-fee-rate-input');
+      const m = document.getElementById('min-fee-input');
+      if (b) b.value = settings.buyFeeRate;
+      if (s) s.value = settings.sellFeeRate;
+      if (m) m.value = settings.minFee;
+      updateHeaderSubtitle();
+      console.log('[Sync] Auto-pulled', payload.records.length, 'records from cloud');
+    }
+  } catch (e) {
+    console.log('[Sync] Auto-pull failed silently:', e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
