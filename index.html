@@ -2197,6 +2197,8 @@ function updateLinkSummary() {
     allocatedEl.textContent = `已关联 ${totalLinked.toFixed(4)} / ${sell.weight.toFixed(4)} g`;
     if (totalLinked > sell.weight + 0.0001) {
       allocatedEl.innerHTML += ` <span style="color:var(--jd-red);">（超出 ${(totalLinked - sell.weight).toFixed(4)}g）</span>`;
+    } else if (Math.abs(totalLinked - sell.weight) > 0.0001 && totalLinked > 0.0001) {
+      allocatedEl.innerHTML += ` <span style="color:var(--warning, #E65100);">（未关联 ${(sell.weight - totalLinked).toFixed(4)}g）</span>`;
     }
   }
 
@@ -2206,8 +2208,19 @@ function updateLinkSummary() {
   }
 
   if (confirmBtn) {
-    confirmBtn.disabled = Math.abs(totalLinked - sell.weight) > 0.0001;
-    confirmBtn.title = confirmBtn.disabled ? '关联克重必须等于卖出克重' : '';
+    // 允许部分关联或完全关联，只要填入了有效克重即可确认
+    const hasValidInput = totalLinked >= 0.0001;
+    const exceedsSell = totalLinked > sell.weight + 0.0001;
+    confirmBtn.disabled = !hasValidInput || exceedsSell;
+    if (!hasValidInput) {
+      confirmBtn.title = '请至少输入一项关联克重';
+    } else if (exceedsSell) {
+      confirmBtn.title = '关联克重超出卖出克重';
+    } else if (Math.abs(totalLinked - sell.weight) > 0.0001) {
+      confirmBtn.title = `部分关联（已关联 ${totalLinked.toFixed(4)}g / 卖出 ${sell.weight.toFixed(4)}g），未关联部分将无盈亏追踪`;
+    } else {
+      confirmBtn.title = '已完整关联，点击确认';
+    }
   }
 }
 
@@ -2243,8 +2256,8 @@ function confirmLink() {
   });
 
   if (Math.abs(totalLinked - sell.weight) > 0.0001) {
-    showToast(`关联克重（${totalLinked.toFixed(4)}g）不等于卖出克重（${sell.weight.toFixed(4)}g）`, 'error');
-    return;
+    // 部分关联：提示用户但仍然允许确认
+    console.log(`部分关联：${totalLinked.toFixed(4)}g / ${sell.weight.toFixed(4)}g`);
   }
 
   // 保存 links 到卖出记录
