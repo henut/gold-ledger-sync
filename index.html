@@ -1440,6 +1440,11 @@ function switchTab(tabId, btn) {
 
   const content = document.getElementById('tab-' + tabId);
   if (content) content.classList.add('active');
+
+  // Auto-find the correct tab button if not provided
+  if (!btn) {
+    btn = document.querySelector(`.tab-btn[onclick*="switchTab('${tabId}'"]`);
+  }
   if (btn) btn.classList.add('active');
 
   // Refresh data for the active tab
@@ -1667,8 +1672,7 @@ function submitSell(event) {
   resetSellForm();
 
   // 自动跳转到交易记录页，方便查看
-  const recordsTabBtn = document.querySelector('[onclick*="switchTab(\'records\'"]');
-  if (recordsTabBtn) switchTab('records', recordsTabBtn);
+  switchTab('records');
 }
 
 function resetSellForm() {
@@ -1878,11 +1882,7 @@ function editRecord(id) {
 
   if (record.type === 'buy') {
     // 切换到买入Tab
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-buy').classList.add('active');
-    const buyBtn = document.querySelector('[onclick*="switchTab(\'buy\'"]');
-    if (buyBtn) buyBtn.classList.add('active');
+    switchTab('buy');
 
     // 填充买入表单
     document.getElementById('buy-price').value = record.price;
@@ -1895,11 +1895,7 @@ function editRecord(id) {
     document.querySelector('#tab-buy .btn-primary').textContent = '✅ 保存修改';
   } else {
     // 切换到卖出Tab
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-sell').classList.add('active');
-    const sellBtn = document.querySelector('[onclick*="switchTab(\'sell\'"]');
-    if (sellBtn) sellBtn.classList.add('active');
+    switchTab('sell');
 
     // 填充卖出表单
     document.getElementById('sell-price').value = record.price;
