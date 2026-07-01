@@ -1014,11 +1014,11 @@
 <!-- ===== Tabs ===== -->
 <div class="tabs-wrapper">
   <div class="tabs" role="tablist">
-    <button class="tab-btn active" role="tab" onclick="switchTab('buy', this)">💚 买入</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('sell', this)">🟠 卖出</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('records', this)">📋 记录</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('position', this)">📊 持仓</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('pnl', this)">💹 盈亏</button>
+    <button class="tab-btn active" role="tab" data-tab="buy" onclick="switchTab('buy')">💚 买入</button>
+    <button class="tab-btn" role="tab" data-tab="sell" onclick="switchTab('sell')">🟠 卖出</button>
+    <button class="tab-btn" role="tab" data-tab="records" onclick="switchTab('records')">📋 记录</button>
+    <button class="tab-btn" role="tab" data-tab="position" onclick="switchTab('position')">📊 持仓</button>
+    <button class="tab-btn" role="tab" data-tab="pnl" onclick="switchTab('pnl')">💹 盈亏</button>
   </div>
 </div>
 
@@ -1434,24 +1434,28 @@ function updateHeaderSubtitle() {
  * @param {string} tabId
  * @param {HTMLElement} btn
  */
-function switchTab(tabId, btn) {
+function switchTab(tabId) {
+  console.log('[switchTab] called with:', tabId);
+  // Hide all tab contents and deactivate all buttons
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
+  // Show target tab content
   const content = document.getElementById('tab-' + tabId);
+  console.log('[switchTab] content element:', content);
   if (content) content.classList.add('active');
 
-  // Auto-find the correct tab button if not provided
-  if (!btn) {
-    btn = document.querySelector(`.tab-btn[onclick*="switchTab('${tabId}'"]`);
-  }
+  // Activate the corresponding button by data-tab attribute
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+  console.log('[switchTab] button element:', btn);
   if (btn) btn.classList.add('active');
 
   // Refresh data for the active tab
-  if (tabId === 'records') renderRecords();
+  if (tabId === 'records') { console.log('[switchTab] calling renderRecords...'); renderRecords(); }
   if (tabId === 'position') renderPosition();
   if (tabId === 'pnl') renderPnl();
   if (tabId === 'sell') updateSellHint();
+  console.log('[switchTab] done');
 }
 
 // -------------------- Input Validation --------------------
@@ -2179,7 +2183,6 @@ function updateLinkSummary() {
       showToast(`关联克重（${weight.toFixed(4)}g）超出可用范围（${maxAllowed.toFixed(4)}g）`, 'error');
       input.value = maxAllowed.toFixed(4);
       updateLinkSummary();
-    }
       input.style.borderColor = 'var(--jd-red)';
       const profitEl2 = document.getElementById('link-profit-' + buyId);
       if (profitEl2) profitEl2.innerHTML = `<span style="color:var(--jd-red);">超出可用克重（最多 ${maxAllowed.toFixed(4)}g）</span>`;
@@ -3053,7 +3056,11 @@ async function silentPull(cfg) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[gold-ledger] page loaded, calling init...');
+  init();
+  console.log('[gold-ledger] init done');
+});
 </script>
 </body>
 </html>
