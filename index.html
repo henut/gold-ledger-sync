@@ -1746,7 +1746,7 @@ function renderRecords() {
       } else {
         // 检查是否有可用买入
         const hasAvailable = records.some(rec =>
-          rec.type === 'buy' && getBuyRemainingWeight(rec.id) > 0.0001
+          rec.type === 'buy' && getBuyRemainingWeight(rec.id) > 0.00005
         );
         if (hasAvailable) {
           linkHtml = `
@@ -1770,7 +1770,7 @@ function renderRecords() {
       const hasLinks = records.some(rec =>
         rec.type === 'sell' && Array.isArray(rec.links) && rec.links.some(l => l.buyId === r.id)
       );
-      if (hasLinks && linkedWeight > 0.0001) {
+      if (hasLinks && linkedWeight > 0.00005) {
         buyLinkHtml = `
           <span class="tag tag-blue" onclick="openLinkDetailOverlay('${r.id}')" title="点击查看关联卖出">
             剩余 ${remaining.toFixed(4)}g（共 ${r.weight.toFixed(4)}g）/ 均价 ${avgPrice.toFixed(2)}
@@ -2026,7 +2026,7 @@ function renderLinkOverlayBody(sellId) {
     // 有剩余可用克重，或已经关联到当前卖出的买入都要显示
     const remaining = getBuyRemainingWeight(b.id);
     const alreadyLinkedToThisSell = existingLinks.some(l => l.buyId === b.id);
-    return remaining > 0.0001 || alreadyLinkedToThisSell;
+    return remaining > 0.00005 || alreadyLinkedToThisSell;
   });
 
   if (availableBuys.length === 0) {
@@ -2180,6 +2180,10 @@ function updateLinkSummary() {
     const maxAllowed = parseFloat((remaining + alreadyLinked).toFixed(4));
 
     if (weight > maxAllowed + 0.0001) {
+      showToast(`关联克重（${weight.toFixed(4)}g）超出可用范围（${maxAllowed.toFixed(4)}g）`, 'error');
+      input.value = maxAllowed.toFixed(4);
+      updateLinkSummary();
+    }
       input.style.borderColor = 'var(--jd-red)';
       const profitEl2 = document.getElementById('link-profit-' + buyId);
       if (profitEl2) profitEl2.innerHTML = `<span style="color:var(--jd-red);">超出可用克重（最多 ${maxAllowed.toFixed(4)}g）</span>`;
@@ -2197,7 +2201,7 @@ function updateLinkSummary() {
     allocatedEl.textContent = `已关联 ${totalLinked.toFixed(4)} / ${sell.weight.toFixed(4)} g`;
     if (totalLinked > sell.weight + 0.0001) {
       allocatedEl.innerHTML += ` <span style="color:var(--jd-red);">（超出 ${(totalLinked - sell.weight).toFixed(4)}g）</span>`;
-    } else if (Math.abs(totalLinked - sell.weight) > 0.0001 && totalLinked > 0.0001) {
+    } else if (Math.abs(totalLinked - sell.weight) > 0.0001 && totalLinked > 0.00005) {
       allocatedEl.innerHTML += ` <span style="color:var(--warning, #E65100);">（未关联 ${(sell.weight - totalLinked).toFixed(4)}g）</span>`;
     }
   }
@@ -2209,7 +2213,7 @@ function updateLinkSummary() {
 
   if (confirmBtn) {
     // 允许部分关联或完全关联，只要填入了有效克重即可确认
-    const hasValidInput = totalLinked >= 0.0001;
+    const hasValidInput = totalLinked > 0.00005;
     const exceedsSell = totalLinked > sell.weight + 0.0001;
     confirmBtn.disabled = !hasValidInput || exceedsSell;
     if (!hasValidInput) {
@@ -2465,7 +2469,7 @@ function computePosition() {
 
   records.filter(r => r.type === 'buy').forEach(buy => {
     const remaining = getBuyRemainingWeight(buy.id);
-    if (remaining > 0.0001) {
+    if (remaining > 0.00005) {
       // 本笔买入的每克成本（含手续费）
       const costPerGram = (buy.amount + buy.fee) / buy.weight;
       remainingCost += remaining * costPerGram;
@@ -2513,7 +2517,7 @@ function renderPosition() {
   safeSetText('pos-bonus-weight', `${pos.bonusRemainingWeight.toFixed(4)} g`);
   const bonusEl = document.getElementById('pos-bonus-info');
   if (bonusEl) {
-    bonusEl.style.display = pos.bonusRemainingWeight > 0.0001 ? 'block' : 'none';
+    bonusEl.style.display = pos.bonusRemainingWeight > 0.00005 ? 'block' : 'none';
   }
 
   // ===== 究极回本价计算 =====
@@ -2550,7 +2554,7 @@ function renderPosition() {
   const ultimatePriceCardEl = document.getElementById('pos-ultimate-price-card');
   const ultimatePriceSubEl = document.getElementById('pos-ultimate-price-sub');
 
-  if (pos.currentWeight > 0.0001) {
+  if (pos.currentWeight > 0.00005) {
     const ultimatePrice = (pos.totalCost - realizedPnl) / pos.currentWeight;
     const displayPrice = ultimatePrice > 0 ? `¥${ultimatePrice.toFixed(2)}/克` : '¥0.00/克（已全回本 🎉）';
 
