@@ -1435,27 +1435,23 @@ function updateHeaderSubtitle() {
  * @param {HTMLElement} btn
  */
 function switchTab(tabId) {
-  console.log('[switchTab] called with:', tabId);
   // Hide all tab contents and deactivate all buttons
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
   // Show target tab content
   const content = document.getElementById('tab-' + tabId);
-  console.log('[switchTab] content element:', content);
   if (content) content.classList.add('active');
 
   // Activate the corresponding button by data-tab attribute
   const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-  console.log('[switchTab] button element:', btn);
   if (btn) btn.classList.add('active');
 
   // Refresh data for the active tab
-  if (tabId === 'records') { console.log('[switchTab] calling renderRecords...'); renderRecords(); }
+  if (tabId === 'records') renderRecords();
   if (tabId === 'position') renderPosition();
   if (tabId === 'pnl') renderPnl();
   if (tabId === 'sell') updateSellHint();
-  console.log('[switchTab] done');
 }
 
 // -------------------- Input Validation --------------------
@@ -1768,27 +1764,33 @@ function renderRecords() {
       }
     }
 
-    // 买入记录：显示查看关联明细按钮
+    // 买入记录：显示剩余克重 + 绑定卖出 + 查看关联按钮
     let buyLinkHtml = '';
     if (isBuy) {
       const avgPrice = r.weight > 0 ? (r.amount + r.fee) / r.weight : 0;
       const remaining = getBuyRemainingWeight(r.id);
-      const linkedWeight = r.weight - remaining;
-      // 检查是否有卖出关联到此买入
       const hasLinks = records.some(rec =>
         rec.type === 'sell' && Array.isArray(rec.links) && rec.links.some(l => l.buyId === r.id)
       );
-      if (hasLinks && linkedWeight > 0.00005) {
+      // 检查是否有可绑定的卖出记录（有剩余容量的卖出）
+      const hasAvailableSells = remaining > 0.00005 && records.some(rec =>
+        rec.type === 'sell' && (rec.weight - getSellLinkedWeight(rec.id)) > 0.00005
+      );
+
+      if (hasLinks) {
         buyLinkHtml = `
           <span class="tag tag-blue" onclick="openLinkDetailOverlay('${r.id}')" title="点击查看关联卖出">
             剩余 ${remaining.toFixed(4)}g（共 ${r.weight.toFixed(4)}g）/ 均价 ${avgPrice.toFixed(2)}
           </span>
-          <button class="btn btn-sm btn-outline" style="margin-left:4px;" onclick="openLinkDetailOverlay('${r.id}')">查看关联</button>`;
+          <button class="btn btn-sm btn-outline" style="margin-left:4px;" onclick="openLinkDetailOverlay('${r.id}')">查看关联</button>
+          <button class="btn btn-sm btn-danger" style="margin-left:4px;" onclick="cancelBuyLink('${r.id}')">取消绑定</button>`
+          + (hasAvailableSells ? `<button class="btn btn-sm btn-primary" style="margin-left:4px;" onclick="openBuyLinkOverlay('${r.id}')">绑定卖出</button>` : '');
       } else {
         buyLinkHtml = `
           <span style="font-size:12px;color:#555;">
             剩余 ${remaining.toFixed(4)}g / 均价 ${avgPrice.toFixed(2)}
-          </span>`;
+          </span>`
+          + (hasAvailableSells ? `<button class="btn btn-sm btn-primary" style="margin-left:4px;" onclick="openBuyLinkOverlay('${r.id}')">绑定卖出</button>` : '');
       }
     }
 
@@ -1968,6 +1970,20 @@ function getBuyRemainingWeight(buyId) {
 }
 
 /**
+ * 获取某笔卖出记录已关联的总克重
+ * @param {string} sellId
+ * @returns {number}
+ */
+function getSellLinkedWeight(sellId) {
+  const sell = records.find(r => r.id === sellId);
+  if (!sell || sell.type !== 'sell') return 0;
+  if (!Array.isArray(sell.links)) return 0;
+  let total = 0;
+  sell.links.forEach(link => { total += link.weight; });
+  return parseFloat(total.toFixed(4));
+}
+
+/**
  * 打开交易关联弹窗
  * @param {string} sellId
  */
@@ -1980,11 +1996,20 @@ function openLinkOverlay(sellId) {
 
   // Store current sellId in a data attribute or global variable
   window._currentLinkSellId = sellId;
+  window._currentLinkBuyId = null;
+  window._linkMode = 'sell';
 
   const overlay = document.getElementById('link-overlay');
   const title = document.getElementById('link-overlay-title');
   if (title) {
     title.textContent = `🔗 交易关联 — ${sell.date} 卖出 ${sell.weight.toFixed(4)}g`;
+  }
+
+  // 确认按钮指向 sell 模式的确认函数
+  const confirmBtn = document.getElementById('link-confirm-btn');
+  if (confirmBtn) {
+    confirmBtn.onclick = confirmLink;
+    confirmBtn.textContent = '确认关联';
   }
 
   renderLinkOverlayBody(sellId);
@@ -2260,7 +2285,6 @@ function confirmLink() {
 
   if (Math.abs(totalLinked - sell.weight) > 0.0001) {
     // 部分关联：提示用户但仍然允许确认
-    console.log(`部分关联：${totalLinked.toFixed(4)}g / ${sell.weight.toFixed(4)}g`);
   }
 
   // 保存 links 到卖出记录
@@ -2301,6 +2325,364 @@ function closeLinkOverlay() {
   const overlay = document.getElementById('link-overlay');
   if (overlay) overlay.classList.remove('show');
   window._currentLinkSellId = null;
+  window._currentLinkBuyId = null;
+  window._linkMode = null;
+}
+
+// ==================== 买入绑定卖出模式 ====================
+
+/**
+ * 打开买入绑定卖出弹窗
+ * @param {string} buyId
+ */
+function openBuyLinkOverlay(buyId) {
+  const buy = records.find(r => r.id === buyId);
+  if (!buy || buy.type !== 'buy') {
+    showToast('找不到该买入记录', 'error');
+    return;
+  }
+
+  window._currentLinkBuyId = buyId;
+  window._currentLinkSellId = null;
+  window._linkMode = 'buy';
+
+  const overlay = document.getElementById('link-overlay');
+  const title = document.getElementById('link-overlay-title');
+  if (title) {
+    title.textContent = `🔗 买入绑定卖出 — ${buy.date} 剩余 ${getBuyRemainingWeight(buyId).toFixed(4)}g`;
+  }
+
+  // 确认按钮指向 buy 模式的确认函数
+  const confirmBtn = document.getElementById('link-confirm-btn');
+  if (confirmBtn) {
+    confirmBtn.onclick = confirmBuyLink;
+    confirmBtn.textContent = '确认绑定';
+  }
+
+  renderBuyLinkOverlayBody(buyId);
+  if (overlay) overlay.classList.add('show');
+}
+
+/**
+ * 渲染买入绑定卖出的弹窗内容
+ * @param {string} buyId
+ */
+function renderBuyLinkOverlayBody(buyId) {
+  const buy = records.find(r => r.id === buyId);
+  if (!buy) return;
+
+  const body = document.getElementById('link-overlay-body');
+  if (!body) return;
+
+  const buyRemaining = getBuyRemainingWeight(buyId);
+
+  // 买入信息
+  let html = `
+    <div class="link-sell-info">
+      <div class="label">买入记录</div>
+      <div>
+        <span class="value">${buy.date}</span> ·
+        价格 <span class="value">¥${buy.price.toFixed(2)}/g</span> ·
+        克重 <span class="value">${buy.weight.toFixed(4)}g</span> ·
+        可用 <span class="value">${buyRemaining.toFixed(4)}g</span>
+        ${buy.remark ? `· ${escapeHtml(buy.remark)}` : ''}
+      </div>
+    </div>`;
+
+  // 找出所有可绑定的卖出记录（有剩余容量的，或已关联到此买入的）
+  const sellRecords = records
+    .filter(r => r.type === 'sell')
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+
+  const availableSells = sellRecords.filter(s => {
+    const sellLinked = getSellLinkedWeight(s.id);
+    const sellRemaining = s.weight - sellLinked;
+    const alreadyLinkedToThisBuy = Array.isArray(s.links) && s.links.some(l => l.buyId === buyId);
+    return sellRemaining > 0.00005 || alreadyLinkedToThisBuy;
+  });
+
+  if (availableSells.length === 0) {
+    html += '<div class="link-empty-state">没有可绑定的卖出记录</div>';
+    body.innerHTML = html;
+    updateBuyLinkSummary();
+    return;
+  }
+
+  html += '<div class="link-batch-list" id="link-batch-list">';
+
+  availableSells.forEach(sell => {
+    const sellLinked = getSellLinkedWeight(sell.id);
+    const sellRemaining = sell.weight - sellLinked;
+    const existingLink = Array.isArray(sell.links) ? sell.links.find(l => l.buyId === buyId) : null;
+    const linkedWeight = existingLink ? existingLink.weight : 0;
+    const maxAllowed = parseFloat((sellRemaining + linkedWeight).toFixed(4));
+
+    html += `
+      <div class="link-batch-item" data-sell-id="${sell.id}">
+        <div class="link-batch-head">
+          <span class="batch-date">${sell.date} 卖出</span>
+          <span class="batch-price">卖出 ¥${sell.price.toFixed(2)}/g</span>
+          <span class="batch-remaining">可容量 ${maxAllowed.toFixed(4)}g</span>
+          ${sell.remark ? `<span style="color:var(--gray-500);">${escapeHtml(sell.remark)}</span>` : ''}
+        </div>
+        <div class="link-batch-input-row">
+          <label>关联克重</label>
+          <input type="number" step="0.0001" min="0" max="${maxAllowed.toFixed(4)}"
+                 value="${linkedWeight > 0 ? linkedWeight.toFixed(4) : ''}"
+                 data-sell-id="${sell.id}"
+                 oninput="updateBuyLinkSummary()"
+                 placeholder="0.0000" />
+          <span class="batch-unit">g</span>
+          <button class="btn btn-sm btn-secondary" style="margin-left:4px; padding:2px 8px; font-size:12px;" onclick="fillAllWeightFromBuy('${sell.id}')">全部</button>
+        </div>
+        <div class="link-profit-row" id="link-profit-${sell.id}"></div>
+      </div>`;
+  });
+
+  html += '</div>';
+
+  // 汇总栏
+  html += `
+    <div class="link-summary-bar" id="link-summary-bar">
+      <span class="summary-allocated" id="link-allocated">已分配 0.0000 / ${buyRemaining.toFixed(4)} g</span>
+      <span class="summary-total-profit" id="link-total-profit">盈亏：--</span>
+    </div>`;
+
+  body.innerHTML = html;
+  updateBuyLinkSummary();
+}
+
+/**
+ * 一键填入某笔卖出的最大可分配克重（买入视角）
+ * @param {string} sellId
+ */
+function fillAllWeightFromBuy(sellId) {
+  const buyId = window._currentLinkBuyId;
+  if (!buyId) return;
+
+  const buy = records.find(r => r.id === buyId);
+  if (!buy) return;
+
+  const sell = records.find(r => r.id === sellId);
+  if (!sell) return;
+
+  const input = document.querySelector(`#link-batch-list input[data-sell-id="${sellId}"]`);
+  if (!input) return;
+
+  // 卖出可容量（含已关联到此买入的）
+  const sellLinked = getSellLinkedWeight(sellId);
+  const existingLink = Array.isArray(sell.links) ? sell.links.find(l => l.buyId === buyId) : null;
+  const alreadyLinked = existingLink ? existingLink.weight : 0;
+  const sellCapacity = parseFloat((sell.weight - sellLinked + alreadyLinked).toFixed(4));
+
+  // 买入可用克重（含已关联到此卖出的）
+  const buyRemaining = getBuyRemainingWeight(buyId);
+  const buyAvailable = parseFloat((buyRemaining + alreadyLinked).toFixed(4));
+
+  // 当前已分配总量（不含此卖出）
+  const inputs = document.querySelectorAll('#link-batch-list input[data-sell-id]');
+  let currentTotal = 0;
+  inputs.forEach(inp => {
+    if (inp.dataset.sellId !== sellId) {
+      currentTotal += parseFloat(inp.value) || 0;
+    }
+  });
+  const stillAvailable = parseFloat((buyAvailable - currentTotal).toFixed(4));
+
+  const fillWeight = Math.min(sellCapacity, stillAvailable);
+  if (fillWeight <= 0) {
+    showToast('无需再填入克重', 'info');
+    return;
+  }
+
+  input.value = fillWeight.toFixed(4);
+  updateBuyLinkSummary();
+}
+
+/**
+ * 更新买入绑定卖出弹窗的汇总信息
+ */
+function updateBuyLinkSummary() {
+  const buyId = window._currentLinkBuyId;
+  if (!buyId) return;
+
+  const buy = records.find(r => r.id === buyId);
+  if (!buy) return;
+
+  const buyRemaining = getBuyRemainingWeight(buyId);
+  const buyCostPrice = buy.price;
+
+  const inputs = document.querySelectorAll('#link-batch-list input[data-sell-id]');
+  let totalAssigned = 0;
+  let totalProfit = 0;
+
+  inputs.forEach(input => {
+    const sellId = input.dataset.sellId;
+    const weight = parseFloat(input.value) || 0;
+
+    const sell = records.find(r => r.id === sellId);
+    if (!sell) return;
+
+    if (weight <= 0) {
+      const profitEl = document.getElementById('link-profit-' + sellId);
+      if (profitEl) profitEl.textContent = '';
+      return;
+    }
+
+    totalAssigned += weight;
+
+    const sellNetAmount = sell.amount - sell.fee;
+    const sellNetPrice = sell.weight > 0 ? sellNetAmount / sell.weight : 0;
+    const profit = (sellNetPrice - buyCostPrice) * weight;
+    totalProfit += profit;
+
+    const profitEl = document.getElementById('link-profit-' + sellId);
+    if (profitEl) {
+      profitEl.innerHTML = `本笔盈亏：<span class="${profit >= 0 ? 'profit-pos' : 'profit-neg'}" style="font-weight:600;">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}</span>`;
+    }
+
+    // 校验不超过卖出可容量
+    const sellLinked = getSellLinkedWeight(sellId);
+    const existingLink = Array.isArray(sell.links) ? sell.links.find(l => l.buyId === buyId) : null;
+    const alreadyLinked = existingLink ? existingLink.weight : 0;
+    const maxAllowed = parseFloat((sell.weight - sellLinked + alreadyLinked).toFixed(4));
+
+    if (weight > maxAllowed + 0.0001) {
+      showToast(`关联克重（${weight.toFixed(4)}g）超出卖出容量（${maxAllowed.toFixed(4)}g）`, 'error');
+      input.value = maxAllowed.toFixed(4);
+      updateBuyLinkSummary();
+      input.style.borderColor = 'var(--jd-red)';
+      const profitEl2 = document.getElementById('link-profit-' + sellId);
+      if (profitEl2) profitEl2.innerHTML = `<span style="color:var(--jd-red);">超出卖出容量（最多 ${maxAllowed.toFixed(4)}g）</span>`;
+    } else {
+      input.style.borderColor = '';
+    }
+  });
+
+  // 更新汇总
+  const allocatedEl = document.getElementById('link-allocated');
+  const profitEl = document.getElementById('link-total-profit');
+  const confirmBtn = document.getElementById('link-confirm-btn');
+
+  if (allocatedEl) {
+    allocatedEl.textContent = `已分配 ${totalAssigned.toFixed(4)} / ${buyRemaining.toFixed(4)} g`;
+    if (totalAssigned > buyRemaining + 0.0001) {
+      allocatedEl.innerHTML += ` <span style="color:var(--jd-red);">（超出 ${(totalAssigned - buyRemaining).toFixed(4)}g）</span>`;
+    } else if (Math.abs(totalAssigned - buyRemaining) > 0.0001 && totalAssigned > 0.00005) {
+      allocatedEl.innerHTML += ` <span style="color:var(--warning, #E65100);">（未分配 ${(buyRemaining - totalAssigned).toFixed(4)}g）</span>`;
+    }
+  }
+
+  if (profitEl) {
+    profitEl.textContent = `预估盈亏：${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)}`;
+    profitEl.className = `summary-total-profit ${totalProfit >= 0 ? 'profit-pos' : 'profit-neg'}`;
+  }
+
+  if (confirmBtn) {
+    const hasValidInput = totalAssigned > 0.00005;
+    const exceedsBuy = totalAssigned > buyRemaining + 0.0001;
+    confirmBtn.disabled = !hasValidInput || exceedsBuy;
+    if (!hasValidInput) {
+      confirmBtn.title = '请至少输入一项关联克重';
+    } else if (exceedsBuy) {
+      confirmBtn.title = '分配克重超出买入可用克重';
+    } else if (Math.abs(totalAssigned - buyRemaining) > 0.0001) {
+      confirmBtn.title = `部分分配（已分配 ${totalAssigned.toFixed(4)}g / 可用 ${buyRemaining.toFixed(4)}g）`;
+    } else {
+      confirmBtn.title = '已完整分配，点击确认';
+    }
+  }
+}
+
+/**
+ * 确认买入绑定卖出
+ * 遍历所有卖出输入，将关联写入对应卖出记录的 links 数组
+ */
+function confirmBuyLink() {
+  const buyId = window._currentLinkBuyId;
+  if (!buyId) return;
+
+  const buy = records.find(r => r.id === buyId);
+  if (!buy) return;
+
+  const inputs = document.querySelectorAll('#link-batch-list input[data-sell-id]');
+  let totalAssigned = 0;
+  let modifiedCount = 0;
+
+  inputs.forEach(input => {
+    const sellId = input.dataset.sellId;
+    const weight = parseFloat(input.value) || 0;
+
+    const sell = records.find(r => r.id === sellId);
+    if (!sell) return;
+
+    if (!Array.isArray(sell.links)) sell.links = [];
+
+    const existingIdx = sell.links.findIndex(l => l.buyId === buyId);
+
+    if (weight <= 0) {
+      // 移除已有关联
+      if (existingIdx >= 0) {
+        sell.links.splice(existingIdx, 1);
+        modifiedCount++;
+      }
+    } else {
+      // 新增或更新关联
+      const linkEntry = {
+        buyId: buyId,
+        buyPrice: buy.price,
+        buyDate: buy.date,
+        weight: parseFloat(weight.toFixed(4)),
+      };
+
+      if (existingIdx >= 0) {
+        sell.links[existingIdx] = linkEntry;
+      } else {
+        sell.links.push(linkEntry);
+      }
+      totalAssigned += weight;
+      modifiedCount++;
+    }
+  });
+
+  // 清理空 links
+  records.forEach(r => {
+    if (r.type === 'sell' && Array.isArray(r.links) && r.links.length === 0) {
+      r.links = [];
+    }
+  });
+
+  saveRecords();
+  closeLinkOverlay();
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  showToast(`✅ 已绑定 ${modifiedCount} 笔卖出记录`, 'success');
+}
+
+/**
+ * 取消某笔买入的所有卖出绑定
+ * 只移除卖出记录中指向此买入的 link，不影响其他买入的关联
+ * @param {string} buyId
+ */
+function cancelBuyLink(buyId) {
+  if (!confirm('确认取消此买入的所有卖出绑定？')) return;
+
+  let removedCount = 0;
+  records.forEach(r => {
+    if (r.type === 'sell' && Array.isArray(r.links)) {
+      const beforeLen = r.links.length;
+      r.links = r.links.filter(l => l.buyId !== buyId);
+      if (r.links.length < beforeLen) removedCount++;
+      if (r.links.length === 0) r.links = [];
+    }
+  });
+
+  saveRecords();
+  renderRecords();
+  renderPosition();
+  renderPnl();
+  showToast(`已取消 ${removedCount} 笔卖出绑定`, 'info');
 }
 
 /**
@@ -3057,9 +3439,7 @@ async function silentPull(cfg) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('[gold-ledger] page loaded, calling init...');
   init();
-  console.log('[gold-ledger] init done');
 });
 </script>
 </body>
